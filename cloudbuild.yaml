@@ -1,0 +1,48 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    secretEnv: ['MAPBOX_TOKEN']
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_MAPBOX_TOKEN=$$MAPBOX_TOKEN'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_APP_NAME=WeatherNext Dashboard'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest'
+      - '.'
+    timeout: '1200s'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'weathernext-dashboard'
+      - '--image=us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--port=8080'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--min-instances=1'
+      - '--max-instances=5'
+      - '--allow-unauthenticated'
+      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=ctoteam,BIGQUERY_PROJECT_ID=ctoteam,BIGQUERY_DATASET=weathernext_2,BIGQUERY_TABLE=weathernext_2_0_0,GEMINI_MODEL_NAME=gemini-2.0-flash,NEXT_PUBLIC_APP_NAME=WeatherNext Dashboard'
+      - '--set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest,GOOGLE_API_KEY=GEMINI_API_KEY:latest'
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/ctoteam/secrets/MAPBOX_TOKEN/versions/latest
+      env: 'MAPBOX_TOKEN'
+
+images:
+  - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+
+timeout: '1800s'
