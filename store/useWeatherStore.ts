@@ -36,10 +36,12 @@ interface WeatherState {
   projection: 'globe' | 'mercator';
   autoRotate: boolean;
   spiralMode: boolean;
-  activeTab: 'forecast' | 'ensemble' | 'alerts' | 'chat';
+  activeTab: 'forecast' | 'ensemble' | 'alerts' | 'chat' | 'cyclones';
   chatOpen: boolean;
   globalAlerts: GlobalAlert[];
   isScanning: boolean;
+  showEarthquakes: boolean;
+  earthquakes: any[];
   
   setLocation: (lat: number | null, lon: number | null) => void;
   setActiveVariable: (variable: string) => void;
@@ -56,10 +58,12 @@ interface WeatherState {
   setProjection: (proj: 'globe' | 'mercator') => void;
   toggleAutoRotate: () => void;
   toggleSpiralMode: () => void;
-  setActiveTab: (tab: 'forecast' | 'ensemble' | 'alerts' | 'chat') => void;
+  setActiveTab: (tab: 'forecast' | 'ensemble' | 'alerts' | 'chat' | 'cyclones') => void;
   setChatOpen: (open: boolean) => void;
   setGlobalAlerts: (alerts: GlobalAlert[]) => void;
   setIsScanning: (scanning: boolean) => void;
+  setShowEarthquakes: (show: boolean) => void;
+  setEarthquakes: (eqs: any[]) => void;
 }
 
 export const useWeatherStore = create<WeatherState>((set, get) => ({
@@ -82,6 +86,8 @@ export const useWeatherStore = create<WeatherState>((set, get) => ({
   chatOpen: false,
   globalAlerts: [],
   isScanning: false,
+  showEarthquakes: false,
+  earthquakes: [],
 
   setLocation: (lat, lon) => set({ selectedLat: lat, selectedLon: lon }),
   setActiveVariable: (variable) => set({ activeVariable: variable }),
@@ -158,4 +164,6 @@ export const useWeatherStore = create<WeatherState>((set, get) => ({
   setChatOpen: (open) => set({ chatOpen: open }),
   setGlobalAlerts: (alerts) => set({ globalAlerts: alerts }),
   setIsScanning: (scanning) => set({ isScanning: scanning }),
+  setShowEarthquakes: (show) => set({ showEarthquakes: show }),
+  setEarthquakes: (eqs) => set({ earthquakes: eqs }),
 }));

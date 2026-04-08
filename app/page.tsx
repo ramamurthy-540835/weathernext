@@ -5,13 +5,14 @@ import dynamic from 'next/dynamic';
 import GlobalWeatherMap from '@/components/map/GlobalWeatherMap';
 import ForecastPanel from '@/components/forecast/ForecastPanel';
 import EnsembleViewer from '@/components/ensemble/EnsembleViewer';
+import CyclonePanel from '@/components/cyclones/CyclonePanel';
 import { useWeatherStore } from '@/store/useWeatherStore';
 import { X, Loader2, AlertTriangle, CheckCircle, Globe, Map as MapIcon, RefreshCw, Tornado } from 'lucide-react';
 
 const TalkToData = dynamic(() => import('@/components/chat/TalkToData'), { ssr: false });
 
 function AlertsTab() {
-  const { selectedLat, selectedLon, initDate, initHour } = useWeatherStore();
+  const { selectedLat, selectedLon, initDate, initHour, earthquakes } = useWeatherStore();
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +23,41 @@ function AlertsTab() {
       try {
         const res = await fetch(`/api/alerts?lat=${selectedLat}&lon=${selectedLon}&initDate=${initDate}&initHour=${initHour}`);
         const data = await res.json();
-        if (data.alerts) setAlerts(data.alerts);
+        
+        let combinedAlerts = data.alerts || [];
+        
+        // Merge major earthquakes near this location
+        const nearbyEqs = earthquakes.filter(eq => 
+          eq.magnitude >= 6.5 && 
+          Math.abs(eq.lat - selectedLat) < 5 && 
+          Math.abs(eq.lon - selectedLon) < 5
+        );
+
+        nearbyEqs.forEach(eq => {
+          if (eq.tsunami) {
+            combinedAlerts.unshift({
+              severity: 'DANGER',
+              label: `🌊 TSUNAMI WARNING — ${eq.place}`,
+              peakValue: eq.magnitude,
+              unit: 'M',
+              peakTime: eq.time,
+              probability: 100,
+              recommendation: 'Coastal evacuation may be required. Monitor official tsunami warning centers.'
+            });
+          } else {
+            combinedAlerts.unshift({
+              severity: eq.magnitude >= 7 ? 'DANGER' : 'WARNING',
+              label: `M${eq.magnitude} Earthquake — ${eq.place}`,
+              peakValue: eq.magnitude,
+              unit: 'M',
+              peakTime: eq.time,
+              probability: 100,
+              recommendation: 'Expect aftershocks. Check local infrastructure.'
+            });
+          }
+        });
+
+        setAlerts(combinedAlerts);
       } catch (e) {
         console.error(e);
       } finally {
@@ -30,7 +65,7 @@ function AlertsTab() {
       }
     };
     fetchAlerts();
-  }, [selectedLat, selectedLon, initDate, initHour]);
+  }, [selectedLat, selectedLon, initDate, initHour, earthquakes]);
 
   if (loading) return <div style={{ padding: '16px', display: 'flex', justifyContent: 'center' }}><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>;
   
@@ -285,7 +320,7 @@ export default function Page() {
 
               {/* Tabs */}
               <div style={{ display: 'flex', borderBottom: '1px solid #1f2937' }}>
-                {(['forecast', 'ensemble', 'alerts', 'chat'] as const).map(tab => (
+                {(['forecast', 'ensemble', 'alerts', 'cyclones'] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -294,7 +329,7 @@ export default function Page() {
                       : { flex: 1, padding: '10px', fontSize: '12px', fontWeight: 500, background: 'transparent', border: 'none', borderBottom: '2px solid transparent', color: '#6b7280', cursor: 'pointer', textTransform: 'capitalize' }
                     }
                   >
-                    {tab === 'chat' ? '💬 Chat' : tab}
+                    {tab === 'cyclones' ? '🌀 Cyclones' : tab}
                   </button>
                 ))}
               </div>
@@ -304,6 +339,7 @@ export default function Page() {
                 {activeTab === 'forecast' && <ForecastPanel />}
                 {activeTab === 'ensemble' && <EnsembleViewer />}
                 {activeTab === 'alerts' && <AlertsTab />}
+                {activeTab === 'cyclones' && <CyclonePanel />}
                 {activeTab === 'chat' && <TalkToData />}
               </div>
 

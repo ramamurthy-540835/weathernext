@@ -68,7 +68,11 @@ export default function GlobalWeatherMap() {
     globalAlerts,
     setGlobalAlerts,
     isScanning,
-    setIsScanning
+    setIsScanning,
+    showEarthquakes,
+    setShowEarthquakes,
+    earthquakes,
+    setEarthquakes
   } = useWeatherStore();
 
   const [hoverCoords, setHoverCoords] = useState<{ lat: number; lon: number } | null>(null);
@@ -81,6 +85,8 @@ export default function GlobalWeatherMap() {
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showCities, setShowCities] = useState(true);
+  const [cyclones, setCyclones] = useState<any[]>([]);
+  const [hoveredEq, setHoveredEq] = useState<any>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -97,6 +103,21 @@ export default function GlobalWeatherMap() {
       setSearchQuery(`${selectedLat.toFixed(4)}, ${selectedLon.toFixed(4)}`);
     }
   }, [selectedLat, selectedLon]);
+
+  useEffect(() => {
+    fetch('/api/earthquakes')
+      .then(r => r.json())
+      .then(d => setEarthquakes(d.earthquakes || []))
+      .catch(e => console.error(e));
+  }, [setEarthquakes]);
+
+  useEffect(() => {
+    if (!initDate) return;
+    fetch(`/api/cyclones?initDate=${initDate}&initHour=${initHour}`)
+      .then(r => r.json())
+      .then(d => setCyclones(d.storms || []))
+      .catch(e => console.error(e));
+  }, [initDate, initHour]);
 
   // Auto-rotation logic
   useEffect(() => {
@@ -499,9 +520,97 @@ export default function GlobalWeatherMap() {
             </div>
           </Marker>
         ))}
+
+        {cyclones.map((storm) => (
+          <Marker
+            key={storm.id}
+            longitude={storm.currentLon}
+            latitude={storm.currentLat}
+            anchor="center"
+          >
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                setLocation(storm.currentLat, storm.currentLon);
+                setActiveTab('cyclones');
+                mapRef.current?.flyTo({
+                  center: [storm.currentLon, storm.currentLat],
+                  zoom: 5, duration: 1200
+                });
+              }}
+              style={{ cursor: 'pointer', position: 'relative', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <div style={{
+                fontSize: 24,
+                animation: 'spin 4s linear infinite',
+                filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.8))'
+              }}>
+                🌀
+              </div>
+              <div style={{
+                position: 'absolute',
+                top: '100%', left: '50%',
+                transform: 'translateX(-50%)',
+                marginTop: 3,
+                background: 'rgba(0,0,0,0.75)',
+                color: '#fca5a5',
+                fontSize: 9, fontWeight: 600,
+                padding: '1px 5px', borderRadius: 4,
+                whiteSpace: 'nowrap', pointerEvents: 'none',
+              }}>
+                {storm.name}
+              </div>
+            </div>
+          </Marker>
+        ))}
+
+        {showEarthquakes && earthquakes.map((eq) => (
+          <Marker
+            key={eq.id}
+            longitude={eq.lon}
+            latitude={eq.lat}
+            anchor="center"
+          >
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(eq.url, '_blank');
+              }}
+              onMouseEnter={(e) => {
+                setHoveredEq(eq);
+                setHoverPos({ x: e.clientX, y: e.clientY });
+              }}
+              onMouseLeave={() => setHoveredEq(null)}
+              style={{ cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              {eq.tsunami && (
+                <div style={{
+                  position: 'absolute',
+                  top: '50%', left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: 30, height: 30,
+                  borderRadius: '50%',
+                  border: '2px solid #ef4444',
+                  animation: 'pulse 1.5s ease-in-out infinite',
+                }} />
+              )}
+              <div style={{
+                width: 0, height: 0,
+                borderLeft: `${eq.magnitude * 1.5}px solid transparent`,
+                borderRight: `${eq.magnitude * 1.5}px solid transparent`,
+                borderBottom: `${eq.magnitude * 3}px solid ${
+                  eq.severity === 'MAJOR' ? '#ef4444' :
+                  eq.severity === 'STRONG' ? '#f97316' :
+                  eq.severity === 'MODERATE' ? '#eab308' : '#9ca3af'
+                }`,
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))'
+              }} />
+            </div>
+          </Marker>
+        ))}
       </Map>
 
-      {/* Hover Tooltip */}
+      {/* Hover Tooltip for Alerts */}
       {hoveredAlert && (
         <div style={{
           position: 'fixed',
@@ -557,6 +666,43 @@ export default function GlobalWeatherMap() {
           )}
           <div style={{ fontSize: 10, color: '#475569', marginTop: 6 }}>
             Click to view full forecast →
+          </div>
+        </div>
+      )}
+
+      {/* Hover Tooltip for Earthquakes */}
+      {hoveredEq && (
+        <div style={{
+          position: 'fixed',
+          left: hoverPos.x + 12,
+          top: hoverPos.y - 20,
+          zIndex: 1000,
+          background: '#0f172a',
+          border: `1px solid ${
+            hoveredEq.severity === 'MAJOR' ? '#ef4444' :
+            hoveredEq.severity === 'STRONG' ? '#f97316' : '#eab308'
+          }`,
+          borderRadius: 8,
+          padding: '10px 14px',
+          minWidth: 200,
+          pointerEvents: 'none',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'white' }}>
+              M{hoveredEq.magnitude} Earthquake
+            </span>
+            {hoveredEq.tsunami && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#fca5a5', background: '#450a0a', padding: '1px 6px', borderRadius: 10, marginLeft: 'auto' }}>
+                🌊 TSUNAMI
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 4 }}>
+            {hoveredEq.place}
+          </div>
+          <div style={{ fontSize: 11, color: '#94a3b8' }}>
+            Depth: {hoveredEq.depth} km · {new Date(hoveredEq.time).toLocaleString()}
           </div>
         </div>
       )}
@@ -731,6 +877,19 @@ export default function GlobalWeatherMap() {
             <v.Icon size={16} />
           </button>
         ))}
+        <button
+          onClick={() => setShowEarthquakes(!showEarthquakes)}
+          title="Earthquakes"
+          style={{
+            width: '40px', height: '40px', borderRadius: '10px', border: '1px solid',
+            borderColor: showEarthquakes ? '#ef4444' : '#374151',
+            background: showEarthquakes ? '#7f1d1d' : 'rgba(17,24,39,0.9)',
+            color: showEarthquakes ? 'white' : '#9ca3af',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            marginTop: 8
+          }}>
+          🌍
+        </button>
       </div>
 
       {/* Global Scan Button & Legend */}
@@ -755,6 +914,30 @@ export default function GlobalWeatherMap() {
               <span style={{ fontSize: 9, color: '#94a3b8' }}>{item.label}</span>
             </div>
           ))}
+          {showEarthquakes && (
+            <div style={{ marginTop: 4, paddingTop: 4, borderTop: '1px solid #374151' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                <span style={{ color: '#9ca3af', fontSize: 10 }}>▲</span>
+                <span style={{ fontSize: 9, color: '#94a3b8' }}>M4-5</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                <span style={{ color: '#eab308', fontSize: 10 }}>▲</span>
+                <span style={{ fontSize: 9, color: '#94a3b8' }}>M5-6</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                <span style={{ color: '#f97316', fontSize: 10 }}>▲</span>
+                <span style={{ fontSize: 9, color: '#94a3b8' }}>M6-7</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                <span style={{ color: '#ef4444', fontSize: 10 }}>▲</span>
+                <span style={{ fontSize: 9, color: '#94a3b8' }}>M7+</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ fontSize: 10 }}>🌊</span>
+                <span style={{ fontSize: 9, color: '#94a3b8' }}>Tsunami</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
