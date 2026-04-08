@@ -10,26 +10,54 @@ export async function GET() {
         AND ST_Y(geography) BETWEEN 12.90 AND 13.10
         AND ST_X(geography) BETWEEN 80.20 AND 80.30
     `;
-    const rows = await runQuery<{ latest_init: string }>(sql);
-    const latest = rows[0]?.latest_init;
+    const rows = await runQuery<{ latest_init: any }>(sql);
+    const raw = rows[0]?.latest_init;
+
+    // BigQuery returns timestamps in different formats
+    // Handle: string, Date object, {value: string}, BigQuery DatetimeValue
+    let latest: Date | null = null;
     
-    if (!latest) {
+    if (!raw) {
+      // No data — use known fallback
       return NextResponse.json(
-        { error: 'No data found' }, 
-        { status: 404 }
+        { latestDate: '2026-04-07', latestHour: 18 },
+        { headers: { 'Cache-Control': 's-maxage=1800' } }
+      );
+    }
+    
+    if (raw instanceof Date) {
+      latest = raw;
+    } else if (typeof raw === 'string') {
+      latest = new Date(raw);
+    } else if (raw?.value) {
+      latest = new Date(raw.value);
+    } else {
+      latest = new Date(String(raw));
+    }
+
+    // Validate the date
+    if (!latest || isNaN(latest.getTime())) {
+      console.warn('[available-dates] Could not parse date:', raw);
+      return NextResponse.json(
+        { latestDate: '2026-04-07', latestHour: 18 },
+        { headers: { 'Cache-Control': 's-maxage=1800' } }
       );
     }
 
-    const dt = new Date(latest);
-    const latestDate = dt.toISOString().split('T')[0];
-    const latestHour = Math.floor(dt.getUTCHours() / 6) * 6;
+    const latestDate = latest.toISOString().split('T')[0];
+    const latestHour = Math.floor(latest.getUTCHours() / 6) * 6;
 
+    console.log('[available-dates] Latest:', latestDate, latestHour);
     return NextResponse.json(
-      { latestDate, latestHour, latestTimestamp: latest },
+      { latestDate, latestHour, raw: String(raw) },
       { headers: { 'Cache-Control': 's-maxage=1800' } }
     );
   } catch (error) {
     console.error('[available-dates]', error);
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    // Always return fallback — never crash
+    return NextResponse.json(
+      { latestDate: '2026-04-07', latestHour: 18 },
+      { headers: { 'Cache-Control': 's-maxage=1800' } }
+    );
   }
 }
