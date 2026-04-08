@@ -436,20 +436,63 @@ export default function GlobalWeatherMap() {
         .mapboxgl-ctrl-attrib a { color: #6b7280 !important; }
       `}</style>
 
-      {/* Interactive Alert Summary Panel */}
-      {globalAlerts.length > 0 && (
-        <div style={{ position: 'absolute', top: 56, left: 16, right: selectedLat ? 436 : 16, zIndex: 20 }}>
+      {/* Global Scan Panel & Legend (Top Left) */}
+      <div style={{ position: 'absolute', top: 56, left: 16, right: selectedLat ? 436 : 16, zIndex: 20, pointerEvents: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ pointerEvents: 'auto', maxWidth: 'fit-content' }}>
           {scanMinimized ? (
-            <div style={{ background: 'rgba(15,23,42,0.95)', border: '1px solid #334155', borderRadius: 8, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', width: 'fit-content' }} onClick={() => setScanMinimized(false)}>
+            <div style={{ background: 'rgba(15,23,42,0.95)',
+              border: '1px solid #334155', borderRadius: 8,
+              padding: '6px 12px', display: 'flex',
+              alignItems: 'center', gap: 10, cursor: 'pointer' }}
+              onClick={() => {
+                if (globalAlerts.length === 0) {
+                  runGlobalScan();
+                } else {
+                  setScanMinimized(false);
+                }
+              }}>
+              
               <span style={{ fontSize: 12 }}>🌐</span>
-              <span style={{ fontSize: 12, color: '#94a3b8' }}>Alert Scan</span>
-              <span style={{ fontSize: 11, color: '#64748b' }}>
-                {dangerCount} DANGER · {warningCount} WARNING · {clearCount} Clear
+              <span style={{ fontSize: 12, color: '#f1f5f9', fontWeight: 600 }}>
+                Alert Scan
               </span>
-              <span style={{ fontSize: 10, color: '#475569', marginLeft: 8 }}>▼ expand</span>
+              
+              {/* Summary counts */}
+              {isScanning ? (
+                <span style={{ fontSize: 11, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Loader2 size={12} className="animate-spin" /> Scanning...
+                </span>
+              ) : (
+                <span style={{ fontSize: 11, color: '#64748b' }}>
+                  {globalAlerts.length > 0 ? `${dangerCount} DANGER · ${warningCount} WARNING · ${clearCount} Clear` : 'Ready to scan'}
+                </span>
+              )}
+              
+              {/* Inline legend - horizontal */}
+              <div style={{ display: 'flex', gap: 8, marginLeft: 8,
+                borderLeft: '1px solid #334155', paddingLeft: 8 }}>
+                {[
+                  { color: '#ef4444', label: 'Danger' },
+                  { color: '#f97316', label: 'Warning' },
+                  { color: '#22c55e', label: 'Clear' },
+                ].map(item => (
+                  <div key={item.label} style={{ display: 'flex',
+                    alignItems: 'center', gap: 3 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%',
+                      background: item.color }} />
+                    <span style={{ fontSize: 10, color: '#94a3b8' }}>
+                      {item.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              
+              <span style={{ fontSize: 10, color: '#475569', marginLeft: 'auto' }}>
+                {globalAlerts.length === 0 ? '▼ scan' : '▼ expand'}
+              </span>
             </div>
           ) : (
-            <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', maxWidth: 360 }}>
+            <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', minWidth: 360 }}>
               {/* Header row */}
               <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: showAlertList ? '1px solid #1e293b' : 'none', cursor: 'pointer' }} onClick={() => setShowAlertList(!showAlertList)}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9' }}>🌐 Global Alert Scan</span>
@@ -516,7 +559,7 @@ export default function GlobalWeatherMap() {
             </div>
           )}
         </div>
-      )}
+      </div>
 
       {/* Region presets — top right */}
       <div style={{ position: 'absolute', top: 56, right: 16, zIndex: 10 }}>
@@ -643,31 +686,6 @@ export default function GlobalWeatherMap() {
             </span>
           )}
         </button>
-      </div>
-
-      {/* Global Scan Button & Legend */}
-      <div style={{ position: 'absolute', left: 16, bottom: 160, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <button onClick={runGlobalScan} disabled={isScanning} style={{
-          background: 'rgba(15,23,42,0.9)', border: '1px solid #dc2626',
-          borderRadius: 8, color: '#f87171', fontSize: 12, padding: '8px 14px',
-          cursor: isScanning ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: isScanning ? 0.7 : 1
-        }}>
-          {isScanning ? <Loader2 size={14} className="animate-spin" /> : <span style={{ fontSize: 14 }}>🌐</span>}
-          {isScanning ? 'Scanning...' : 'Scan Alerts'}
-        </button>
-        
-        <div style={{ background: 'rgba(15,23,42,0.7)', border: '1px solid #1e293b', borderRadius: 6, padding: '4px 8px' }}>
-          {[
-            { color: '#ef4444', label: 'Danger' },
-            { color: '#f97316', label: 'Warning' },
-            { color: '#22c55e', label: 'Clear' },
-          ].map(item => (
-            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
-              <div style={{ width: 7, height: 7, borderRadius: '50%', background: item.color }} />
-              <span style={{ fontSize: 9, color: '#94a3b8' }}>{item.label}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Coordinate display — bottom left */}
