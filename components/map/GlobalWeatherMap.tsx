@@ -83,7 +83,7 @@ export default function GlobalWeatherMap() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showCities, setShowCities] = useState(true);
   const [cyclones, setCyclones] = useState<any[]>([]);
-  const [scanMinimized, setScanMinimized] = useState(true);
+  const [scanMinimized, setScanMinimized] = useState(false);
   
   const [hazards, setHazards] = useState<{
     earthquakes: any[];
@@ -438,7 +438,7 @@ export default function GlobalWeatherMap() {
 
       {/* Global Scan Panel & Legend (Top Left) */}
       <div style={{ position: 'absolute', top: 56, left: 16, right: selectedLat ? 436 : 16, zIndex: 20, pointerEvents: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ pointerEvents: 'auto', maxWidth: 360 }}>
+        <div style={{ pointerEvents: 'auto' }}>
           {globalAlerts.length === 0 ? (
             <button onClick={runGlobalScan} disabled={isScanning} style={{
               background: 'rgba(15,23,42,0.95)', border: '1px solid #dc2626',
