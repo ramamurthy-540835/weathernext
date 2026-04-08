@@ -65,6 +65,7 @@ export default function GlobalWeatherMap() {
     togglePlay,
     setChatOpen,
     setActiveTab,
+    activeTab,
     globalAlerts,
     setGlobalAlerts,
     isScanning,
@@ -112,12 +113,13 @@ export default function GlobalWeatherMap() {
   }, [setEarthquakes]);
 
   useEffect(() => {
-    if (!initDate) return;
-    fetch(`/api/cyclones?initDate=${initDate}&initHour=${initHour}`)
-      .then(r => r.json())
-      .then(d => setCyclones(d.storms || []))
-      .catch(e => console.error(e));
-  }, [initDate, initHour]);
+    if (activeTab === 'cyclones' && cyclones.length === 0) {
+      fetch(`/api/cyclones?initDate=${initDate}&initHour=${initHour}`)
+        .then(r => r.json())
+        .then(d => setCyclones(d.storms || []))
+        .catch(e => console.error(e));
+    }
+  }, [activeTab, initDate, initHour, cyclones.length]);
 
   // Auto-rotation logic
   useEffect(() => {
@@ -521,7 +523,7 @@ export default function GlobalWeatherMap() {
           </Marker>
         ))}
 
-        {cyclones.map((storm) => (
+        {cyclones.map(storm => (
           <Marker
             key={storm.id}
             longitude={storm.currentLon}
@@ -529,37 +531,15 @@ export default function GlobalWeatherMap() {
             anchor="center"
           >
             <div
-              onClick={(e) => {
-                e.stopPropagation();
-                setLocation(storm.currentLat, storm.currentLon);
-                setActiveTab('cyclones');
-                mapRef.current?.flyTo({
-                  center: [storm.currentLon, storm.currentLat],
-                  zoom: 5, duration: 1200
-                });
-              }}
-              style={{ cursor: 'pointer', position: 'relative', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <div style={{
-                fontSize: 24,
+              onClick={() => setActiveTab('cyclones')}
+              title={`${storm.name}: ${storm.category} · ${storm.currentWindKnots?.toFixed(0)} kts`}
+              style={{
+                fontSize: 20,
+                cursor: 'pointer',
                 animation: 'spin 4s linear infinite',
-                filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.8))'
+                filter: 'drop-shadow(0 0 8px #3b82f6)',
               }}>
-                🌀
-              </div>
-              <div style={{
-                position: 'absolute',
-                top: '100%', left: '50%',
-                transform: 'translateX(-50%)',
-                marginTop: 3,
-                background: 'rgba(0,0,0,0.75)',
-                color: '#fca5a5',
-                fontSize: 9, fontWeight: 600,
-                padding: '1px 5px', borderRadius: 4,
-                whiteSpace: 'nowrap', pointerEvents: 'none',
-              }}>
-                {storm.name}
-              </div>
+              🌀
             </div>
           </Marker>
         ))}
@@ -759,7 +739,7 @@ export default function GlobalWeatherMap() {
 
       {/* Interactive Alert Summary Panel */}
       {globalAlerts.length > 0 && (
-        <div style={{ position: 'absolute', top: 56, left: 16, right: 16, zIndex: 20 }}>
+        <div style={{ position: 'absolute', top: 56, left: 16, right: 16, maxWidth: 360, zIndex: 20 }}>
           <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
             {/* Header row */}
             <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: showAlertList ? '1px solid #1e293b' : 'none', cursor: 'pointer' }} onClick={() => setShowAlertList(!showAlertList)}>
