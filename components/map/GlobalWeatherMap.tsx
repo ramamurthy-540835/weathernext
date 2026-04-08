@@ -84,9 +84,14 @@ export default function GlobalWeatherMap() {
   const [showCities, setShowCities] = useState(true);
   const [cyclones, setCyclones] = useState<any[]>([]);
   
+  const [hazards, setHazards] = useState<{
+    earthquakes: any[];
+    wildfires: any[];
+    counts: any;
+  }>({ earthquakes: [], wildfires: [], counts: {} });
+  
   const [showEarthquakes, setShowEarthquakes] = useState(true);
   const [showWildfires, setShowWildfires] = useState(true);
-  const [hazards, setHazards] = useState<any>({ earthquakes: [], wildfires: [], counts: { earthquakes: 0, wildfires: 0 } });
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -417,10 +422,10 @@ export default function GlobalWeatherMap() {
         .mapboxgl-ctrl-attrib a { color: #6b7280 !important; }
       `}</style>
 
-      {/* Interactive Alert Summary Panel */}
-      {globalAlerts.length > 0 && (
-        <div style={{ position: 'absolute', top: 56, left: 16, right: 16, zIndex: 20 }}>
-          <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+      {/* Scan Alerts Panel (Top of Map) */}
+      <div style={{ position: 'absolute', top: 56, left: 16, right: 16, zIndex: 20, pointerEvents: 'none' }}>
+        {globalAlerts.length > 0 ? (
+          <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', pointerEvents: 'auto' }}>
             {/* Header row */}
             <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: showAlertList ? '1px solid #1e293b' : 'none', cursor: 'pointer' }} onClick={() => setShowAlertList(!showAlertList)}>
               <span style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9' }}>🌐 Global Alert Scan</span>
@@ -485,9 +490,33 @@ export default function GlobalWeatherMap() {
               </div>
             )}
           </div>
-        </div>
-      )}
-      
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start', pointerEvents: 'auto' }}>
+            <button onClick={runGlobalScan} disabled={isScanning} style={{
+              background: 'rgba(15,23,42,0.9)', border: '1px solid #dc2626',
+              borderRadius: 8, color: '#f87171', fontSize: 12, padding: '8px 14px',
+              cursor: isScanning ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: isScanning ? 0.7 : 1
+            }}>
+              {isScanning ? <Loader2 size={14} className="animate-spin" /> : <span style={{ fontSize: 14 }}>🌐</span>}
+              {isScanning ? 'Scanning...' : 'Scan Alerts'}
+            </button>
+            
+            <div style={{ background: 'rgba(15,23,42,0.7)', border: '1px solid #1e293b', borderRadius: 6, padding: '4px 8px' }}>
+              {[
+                { color: '#ef4444', label: 'Danger' },
+                { color: '#f97316', label: 'Warning' },
+                { color: '#22c55e', label: 'Clear' },
+              ].map(item => (
+                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: item.color }} />
+                  <span style={{ fontSize: 9, color: '#94a3b8' }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Mapbox map — fills entire container */}
       <Map
         ref={mapRef}
@@ -637,6 +666,7 @@ export default function GlobalWeatherMap() {
           </Marker>
         ))}
 
+        {/* EARTHQUAKE MARKERS */}
         {showEarthquakes && hazards.earthquakes?.map((eq: any) => (
           <Marker
             key={eq.id}
@@ -645,26 +675,38 @@ export default function GlobalWeatherMap() {
             anchor="bottom"
           >
             <div
-              onClick={() => setHoveredAlert(eq)}
+              onClick={() => setHoveredAlert({ ...eq, type: 'earthquake' })}
               style={{ cursor: 'pointer' }}
               title={`M${eq.magnitude} - ${eq.place}`}
             >
+              {/* Triangle shape */}
               <div style={{
-                width: 0, height: 0,
-                borderLeft: `${Math.max(6, eq.magnitude * 3)}px solid transparent`,
-                borderRight: `${Math.max(6, eq.magnitude * 3)}px solid transparent`,
-                borderBottom: `${Math.max(10, eq.magnitude * 5)}px solid ${
+                width: 0,
+                height: 0,
+                borderLeft: `${Math.max(7, eq.magnitude * 3)}px solid transparent`,
+                borderRight: `${Math.max(7, eq.magnitude * 3)}px solid transparent`,
+                borderBottom: `${Math.max(12, eq.magnitude * 5)}px solid ${
                   eq.magnitude >= 7 ? '#ef4444' :
                   eq.magnitude >= 6 ? '#f97316' :
                   eq.magnitude >= 5 ? '#eab308' : '#94a3b8'
                 }`,
+                filter: eq.tsunami 
+                  ? 'drop-shadow(0 0 8px #3b82f6)' 
+                  : `drop-shadow(0 0 4px ${eq.magnitude >= 7 ? '#ef4444' : '#f97316'})`,
+                margin: '0 auto',
               }} />
+              {/* Magnitude label */}
               <div style={{
-                fontSize: 8, color: 'white', textAlign: 'center',
-                fontWeight: 700, textShadow: '0 0 3px black',
-                marginTop: 1, whiteSpace: 'nowrap',
+                fontSize: 9,
+                color: 'white',
+                textAlign: 'center',
+                fontWeight: 700,
+                textShadow: '0 0 4px black, 0 0 4px black',
+                marginTop: 2,
+                whiteSpace: 'nowrap',
               }}>
                 M{eq.magnitude?.toFixed(1)}
+                {eq.tsunami ? ' 🌊' : ''}
               </div>
             </div>
           </Marker>
@@ -678,7 +720,7 @@ export default function GlobalWeatherMap() {
             anchor="center"
           >
             <div
-              onClick={() => setHoveredAlert(fire)}
+              onClick={() => setHoveredAlert({ ...fire, type: 'wildfire' })}
               style={{
                 cursor: 'pointer',
                 fontSize: fire.frp > 100 ? 16 : 12,
@@ -701,54 +743,103 @@ export default function GlobalWeatherMap() {
           zIndex: 1000,
           background: '#0f172a',
           border: `1px solid ${
+            hoveredAlert.type === 'earthquake' ? (hoveredAlert.magnitude >= 7 ? '#ef4444' : hoveredAlert.magnitude >= 6 ? '#f97316' : '#eab308') :
             (hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '#ef4444' :
             (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '#f97316' : '#eab308'
           }`,
           borderRadius: 8,
           padding: '10px 14px',
           minWidth: 200,
-          pointerEvents: 'none',
+          pointerEvents: 'auto',
           boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center',
-            gap: 6, marginBottom: 6 }}>
-            <span style={{ fontSize: 12 }}>
-              {(hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '🔴' :
-               (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '🟠' : '🟡'}
-            </span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'white' }}>
-              {hoveredAlert.city || hoveredAlert.place || 'Alert'}
-            </span>
-            <span style={{
-              fontSize: 10, fontWeight: 700,
-              color: (hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '#fca5a5' :
-                     (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '#fdba74' : '#fde68a',
-              background: (hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '#450a0a' :
-                          (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '#431407' : '#422006',
-              padding: '1px 6px', borderRadius: 10, marginLeft: 'auto'
-            }}>
-              {hoveredAlert.severity}
-            </span>
-          </div>
-          <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 4 }}>
-            {hoveredAlert.label || (hoveredAlert.magnitude ? `Magnitude: ${hoveredAlert.magnitude}` : 'Fire Detected')}
-          </div>
-          {hoveredAlert.peakValue > 0 && (
-            <div style={{ fontSize: 11, color: '#94a3b8' }}>
-              Peak: {hoveredAlert.peakValue}{hoveredAlert.unit}
-              {(hoveredAlert.probability || 0) > 0 && ` · ${hoveredAlert.probability}% probability`}
-            </div>
+          {hoveredAlert?.type === 'earthquake' ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center',
+                gap: 6, marginBottom: 6 }}>
+                <span style={{ fontSize: 16 }}>
+                  {hoveredAlert.magnitude >= 7 ? '🔴' :
+                   hoveredAlert.magnitude >= 6 ? '🟠' : '🟡'}
+                </span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'white' }}>
+                  M{hoveredAlert.magnitude?.toFixed(1)} Earthquake
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 4 }}>
+                {hoveredAlert.place}
+              </div>
+              <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                Depth: {hoveredAlert.depth?.toFixed(0)}km
+                · {new Date(hoveredAlert.time).toLocaleDateString()}
+              </div>
+              {hoveredAlert.tsunami && (
+                <div style={{ fontSize: 12, color: '#3b82f6', 
+                  fontWeight: 600, marginTop: 4 }}>
+                  🌊 Tsunami warning issued
+                </div>
+              )}
+              <div style={{ fontSize: 11, color: '#6b7280', marginTop: 6 }}>
+                {hoveredAlert.recommendation}
+              </div>
+              <a href={hoveredAlert.url} target="_blank" rel="noopener"
+                style={{ fontSize: 11, color: '#60a5fa', display: 'block',
+                  marginTop: 6 }}>
+                View USGS report →
+              </a>
+            </>
+          ) : hoveredAlert?.type === 'wildfire' ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <span style={{ fontSize: 16 }}>🔥</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'white' }}>Wildfire Detected</span>
+              </div>
+              <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 4 }}>
+                FRP: {hoveredAlert.frp} MW
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center',
+                gap: 6, marginBottom: 6 }}>
+                <span style={{ fontSize: 12 }}>
+                  {(hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '🔴' :
+                   (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '🟠' : '🟡'}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'white' }}>
+                  {hoveredAlert.city || hoveredAlert.place || 'Alert'}
+                </span>
+                <span style={{
+                  fontSize: 10, fontWeight: 700,
+                  color: (hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '#fca5a5' :
+                         (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '#fdba74' : '#fde68a',
+                  background: (hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '#450a0a' :
+                              (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '#431407' : '#422006',
+                  padding: '1px 6px', borderRadius: 10, marginLeft: 'auto'
+                }}>
+                  {hoveredAlert.severity}
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 4 }}>
+                {hoveredAlert.label || (hoveredAlert.magnitude ? `Magnitude: ${hoveredAlert.magnitude}` : 'Fire Detected')}
+              </div>
+              {hoveredAlert.peakValue > 0 && (
+                <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                  Peak: {hoveredAlert.peakValue}{hoveredAlert.unit}
+                  {(hoveredAlert.probability || 0) > 0 && ` · ${hoveredAlert.probability}% probability`}
+                </div>
+              )}
+              {hoveredAlert.recommendation && (
+                <div style={{ fontSize: 11, color: '#6b7280',
+                  marginTop: 6, lineHeight: 1.5,
+                  borderTop: '1px solid #1e293b', paddingTop: 6 }}>
+                  💡 {hoveredAlert.recommendation}
+                </div>
+              )}
+              <div style={{ fontSize: 10, color: '#475569', marginTop: 6 }}>
+                Click to view full forecast →
+              </div>
+            </>
           )}
-          {hoveredAlert.recommendation && (
-            <div style={{ fontSize: 11, color: '#6b7280',
-              marginTop: 6, lineHeight: 1.5,
-              borderTop: '1px solid #1e293b', paddingTop: 6 }}>
-              💡 {hoveredAlert.recommendation}
-            </div>
-          )}
-          <div style={{ fontSize: 10, color: '#475569', marginTop: 6 }}>
-            Click to view full forecast →
-          </div>
         </div>
       )}
 
@@ -852,29 +943,50 @@ export default function GlobalWeatherMap() {
           </button>
         ))}
         
-        {/* Divider */}
-        <div style={{ height: 1, background: '#1e293b', margin: '4px 0' }} />
+        {/* Divider line */}
+        <div style={{ 
+          width: 40, height: 1, 
+          background: '#1e293b', 
+          margin: '2px 0' 
+        }} />
 
-        {/* Earthquake toggle */}
+        {/* Earthquake toggle button */}
         <button
-          onClick={() => setShowEarthquakes(!showEarthquakes)}
-          title={`Earthquakes ${hazards.earthquakes?.length ? '(' + hazards.earthquakes.length + ')' : ''}`}
+          onClick={() => setShowEarthquakes(prev => !prev)}
+          title={`Earthquakes (${hazards.earthquakes?.length || 0})`}
           style={{
-            width: 40, height: 40, borderRadius: 10,
+            width: 40,
+            height: 40,
+            borderRadius: 10,
             border: `1px solid ${showEarthquakes ? '#ef4444' : '#374151'}`,
-            background: showEarthquakes ? 'rgba(239,68,68,0.2)' : 'rgba(15,23,42,0.9)',
+            background: showEarthquakes 
+              ? 'rgba(239,68,68,0.2)' 
+              : 'rgba(15,23,42,0.9)',
             color: showEarthquakes ? '#ef4444' : '#6b7280',
-            cursor: 'pointer', fontSize: 14, fontWeight: 700,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: 16,
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             position: 'relative',
-          }}>
+          }}
+        >
           ▲
           {hazards.earthquakes?.length > 0 && (
             <span style={{
-              position: 'absolute', top: -5, right: -5,
-              background: '#ef4444', color: 'white',
-              fontSize: 8, borderRadius: 10, padding: '1px 3px',
-              fontWeight: 700, minWidth: 14, textAlign: 'center',
+              position: 'absolute',
+              top: -6,
+              right: -6,
+              background: '#ef4444',
+              color: 'white',
+              fontSize: 9,
+              borderRadius: 10,
+              padding: '1px 4px',
+              fontWeight: 700,
+              minWidth: 16,
+              textAlign: 'center',
+              lineHeight: '14px',
             }}>
               {hazards.earthquakes.length}
             </span>
@@ -906,31 +1018,6 @@ export default function GlobalWeatherMap() {
             </span>
           )}
         </button>
-      </div>
-
-      {/* Global Scan Button & Legend */}
-      <div style={{ position: 'absolute', left: 16, bottom: 160, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <button onClick={runGlobalScan} disabled={isScanning} style={{
-          background: 'rgba(15,23,42,0.9)', border: '1px solid #dc2626',
-          borderRadius: 8, color: '#f87171', fontSize: 12, padding: '8px 14px',
-          cursor: isScanning ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: isScanning ? 0.7 : 1
-        }}>
-          {isScanning ? <Loader2 size={14} className="animate-spin" /> : <span style={{ fontSize: 14 }}>🌐</span>}
-          {isScanning ? 'Scanning...' : 'Scan Alerts'}
-        </button>
-        
-        <div style={{ background: 'rgba(15,23,42,0.7)', border: '1px solid #1e293b', borderRadius: 6, padding: '4px 8px' }}>
-          {[
-            { color: '#ef4444', label: 'Danger' },
-            { color: '#f97316', label: 'Warning' },
-            { color: '#22c55e', label: 'Clear' },
-          ].map(item => (
-            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
-              <div style={{ width: 7, height: 7, borderRadius: '50%', background: item.color }} />
-              <span style={{ fontSize: 9, color: '#94a3b8' }}>{item.label}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Coordinate display — bottom left */}
