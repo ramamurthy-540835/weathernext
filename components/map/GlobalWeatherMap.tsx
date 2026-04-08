@@ -83,6 +83,7 @@ export default function GlobalWeatherMap() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showCities, setShowCities] = useState(true);
   const [cyclones, setCyclones] = useState<any[]>([]);
+  const [scanMinimized, setScanMinimized] = useState(true);
   
   const [hazards, setHazards] = useState<{
     earthquakes: any[];
@@ -146,6 +147,14 @@ export default function GlobalWeatherMap() {
     }
   }, [activeTab, initDate, initHour, cyclones.length]);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setHoveredAlert(null);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   // Auto-rotation logic
   useEffect(() => {
     let animationFrameId: number;
@@ -196,6 +205,7 @@ export default function GlobalWeatherMap() {
   };
 
   const handleMapClick = useCallback((e: any) => {
+    setHoveredAlert(null);
     // Ignore clicks on overlay controls
     const target = e.originalEvent?.target as HTMLElement;
     if (target && (target.closest('button') || target.closest('input'))) return;
@@ -394,6 +404,12 @@ export default function GlobalWeatherMap() {
     
     setGlobalAlerts(results);
     setIsScanning(false);
+    setScanMinimized(false);
+    
+    const dCount = results.filter(r => r.severity === 'DANGER').length;
+    if (dCount === 0) {
+      setTimeout(() => setScanMinimized(true), 5000);
+    }
   };
 
   useEffect(() => {
@@ -408,8 +424,6 @@ export default function GlobalWeatherMap() {
   const warningCount = globalAlerts.filter(a => a.severity === 'WARNING').length;
   const clearCount = globalAlerts.filter(a => a.severity === 'CLEAR' || a.severity === 'INFO').length;
 
-  console.log('[Map] Rendering earthquakes:', hazards.earthquakes?.length, 'showEarthquakes:', showEarthquakes);
-
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <style>{`
@@ -422,476 +436,87 @@ export default function GlobalWeatherMap() {
         .mapboxgl-ctrl-attrib a { color: #6b7280 !important; }
       `}</style>
 
-      {/* Scan Alerts Panel (Top of Map) */}
-      <div style={{ position: 'absolute', top: 56, left: 16, right: 16, zIndex: 20, pointerEvents: 'none' }}>
-        {globalAlerts.length > 0 ? (
-          <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', pointerEvents: 'auto' }}>
-            {/* Header row */}
-            <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: showAlertList ? '1px solid #1e293b' : 'none', cursor: 'pointer' }} onClick={() => setShowAlertList(!showAlertList)}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9' }}>🌐 Global Alert Scan</span>
-              {/* Severity counts */}
-              <div style={{ display: 'flex', gap: 6, marginLeft: 4 }}>
-                {dangerCount > 0 && (
-                  <span style={{ fontSize: 11, fontWeight: 700, background: '#450a0a', color: '#fca5a5', padding: '2px 8px', borderRadius: 20 }}>🔴 {dangerCount} DANGER</span>
-                )}
-                {warningCount > 0 && (
-                  <span style={{ fontSize: 11, fontWeight: 700, background: '#431407', color: '#fdba74', padding: '2px 8px', borderRadius: 20 }}>🟠 {warningCount} WARNING</span>
-                )}
-                {clearCount > 0 && (
-                  <span style={{ fontSize: 11, background: '#052e16', color: '#86efac', padding: '2px 8px', borderRadius: 20 }}>✓ {clearCount} Clear</span>
-                )}
-              </div>
-              <span style={{ marginLeft: 'auto', fontSize: 10, color: '#64748b' }}>{showAlertList ? '▲ Hide' : '▼ Details'}</span>
+      {/* Interactive Alert Summary Panel */}
+      {globalAlerts.length > 0 && (
+        <div style={{ position: 'absolute', top: 56, left: 16, right: selectedLat ? 436 : 16, zIndex: 20 }}>
+          {scanMinimized ? (
+            <div style={{ background: 'rgba(15,23,42,0.95)', border: '1px solid #334155', borderRadius: 8, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', width: 'fit-content' }} onClick={() => setScanMinimized(false)}>
+              <span style={{ fontSize: 12 }}>🌐</span>
+              <span style={{ fontSize: 12, color: '#94a3b8' }}>Alert Scan</span>
+              <span style={{ fontSize: 11, color: '#64748b' }}>
+                {dangerCount} DANGER · {warningCount} WARNING · {clearCount} Clear
+              </span>
+              <span style={{ fontSize: 10, color: '#475569', marginLeft: 8 }}>▼ expand</span>
             </div>
+          ) : (
+            <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', maxWidth: 360 }}>
+              {/* Header row */}
+              <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: showAlertList ? '1px solid #1e293b' : 'none', cursor: 'pointer' }} onClick={() => setShowAlertList(!showAlertList)}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9' }}>🌐 Global Alert Scan</span>
+                {/* Severity counts */}
+                <div style={{ display: 'flex', gap: 6, marginLeft: 4 }}>
+                  {dangerCount > 0 && (
+                    <span style={{ fontSize: 11, fontWeight: 700, background: '#450a0a', color: '#fca5a5', padding: '2px 8px', borderRadius: 20 }}>🔴 {dangerCount} DANGER</span>
+                  )}
+                  {warningCount > 0 && (
+                    <span style={{ fontSize: 11, fontWeight: 700, background: '#431407', color: '#fdba74', padding: '2px 8px', borderRadius: 20 }}>🟠 {warningCount} WARNING</span>
+                  )}
+                  {clearCount > 0 && (
+                    <span style={{ fontSize: 11, background: '#052e16', color: '#86efac', padding: '2px 8px', borderRadius: 20 }}>✓ {clearCount} Clear</span>
+                  )}
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); setScanMinimized(true); }} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 12, padding: '2px 6px' }}>▲ minimize</button>
+              </div>
 
-            {/* Expandable alert list */}
-            {showAlertList && (
-              <div style={{ maxHeight: 320, overflowY: 'auto' }}>
-                {globalAlerts
-                  .sort((a, b) => {
-                    const order = { DANGER: 0, WARNING: 1, INFO: 2, CLEAR: 3 };
-                    return order[a.severity] - order[b.severity];
-                  })
-                  .map((alert) => (
-                  <div key={alert.city}
-                    onClick={() => {
-                      setShowAlertList(false);
-                      mapRef.current?.flyTo({ center: [alert.lon, alert.lat], zoom: 9, duration: 1200 });
-                      setLocation(alert.lat, alert.lon);
-                    }}
-                    style={{ padding: '10px 14px', borderBottom: '1px solid #0f172a', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 10, background: 'transparent', transition: 'background 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(30,58,138,0.2)'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
-                  >
-                    {/* Severity dot */}
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, marginTop: 3, background: alert.severity === 'DANGER' ? '#ef4444' : alert.severity === 'WARNING' ? '#f97316' : alert.severity === 'INFO' ? '#eab308' : '#22c55e', boxShadow: alert.severity === 'DANGER' ? '0 0 8px rgba(239,68,68,0.8)' : 'none' }} />
-                    <div style={{ flex: 1 }}>
-                      {/* City + severity */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>{alert.city}</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: alert.severity === 'DANGER' ? '#fca5a5' : alert.severity === 'WARNING' ? '#fdba74' : alert.severity === 'INFO' ? '#fde68a' : '#86efac' }}>{alert.severity}</span>
-                      </div>
-                      {/* Alert label */}
-                      <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: alert.recommendation ? 4 : 0 }}>
-                        {alert.label}
-                        {alert.peakValue > 0 && (
-                          <span style={{ color: '#94a3b8', marginLeft: 6 }}>· Peak: {alert.peakValue}{alert.unit}{(alert.probability || 0) > 0 && ` · ${alert.probability}% prob`}</span>
+              {/* Expandable alert list */}
+              {showAlertList && (
+                <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+                  {globalAlerts
+                    .sort((a, b) => {
+                      const order = { DANGER: 0, WARNING: 1, INFO: 2, CLEAR: 3 };
+                      return order[a.severity] - order[b.severity];
+                    })
+                    .map((alert) => (
+                    <div key={alert.city}
+                      onClick={() => {
+                        setShowAlertList(false);
+                        mapRef.current?.flyTo({ center: [alert.lon, alert.lat], zoom: 9, duration: 1200 });
+                        setLocation(alert.lat, alert.lon);
+                      }}
+                      style={{ padding: '10px 14px', borderBottom: '1px solid #0f172a', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 10, background: 'transparent', transition: 'background 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(30,58,138,0.2)'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                    >
+                      {/* Severity dot */}
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, marginTop: 3, background: alert.severity === 'DANGER' ? '#ef4444' : alert.severity === 'WARNING' ? '#f97316' : alert.severity === 'INFO' ? '#eab308' : '#22c55e', boxShadow: alert.severity === 'DANGER' ? '0 0 8px rgba(239,68,68,0.8)' : 'none' }} />
+                      <div style={{ flex: 1 }}>
+                        {/* City + severity */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>{alert.city}</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: alert.severity === 'DANGER' ? '#fca5a5' : alert.severity === 'WARNING' ? '#fdba74' : alert.severity === 'INFO' ? '#fde68a' : '#86efac' }}>{alert.severity}</span>
+                        </div>
+                        {/* Alert label */}
+                        <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: alert.recommendation ? 4 : 0 }}>
+                          {alert.label}
+                          {alert.peakValue > 0 && (
+                            <span style={{ color: '#94a3b8', marginLeft: 6 }}>· Peak: {alert.peakValue}{alert.unit}{(alert.probability || 0) > 0 && ` · ${alert.probability}% prob`}</span>
+                          )}
+                        </div>
+                        {/* Recommendation */}
+                        {alert.recommendation && alert.severity !== 'CLEAR' && (
+                          <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5, marginTop: 3, paddingLeft: 8, borderLeft: '2px solid #3b82f6' }}>
+                            {alert.recommendation}
+                          </div>
                         )}
                       </div>
-                      {/* Recommendation */}
-                      {alert.recommendation && alert.severity !== 'CLEAR' && (
-                        <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5, marginTop: 3, paddingLeft: 8, borderLeft: '2px solid #3b82f6' }}>
-                          {alert.recommendation}
-                        </div>
-                      )}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start', pointerEvents: 'auto' }}>
-            <button onClick={runGlobalScan} disabled={isScanning} style={{
-              background: 'rgba(15,23,42,0.9)', border: '1px solid #dc2626',
-              borderRadius: 8, color: '#f87171', fontSize: 12, padding: '8px 14px',
-              cursor: isScanning ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: isScanning ? 0.7 : 1
-            }}>
-              {isScanning ? <Loader2 size={14} className="animate-spin" /> : <span style={{ fontSize: 14 }}>🌐</span>}
-              {isScanning ? 'Scanning...' : 'Scan Alerts'}
-            </button>
-            
-            <div style={{ background: 'rgba(15,23,42,0.7)', border: '1px solid #1e293b', borderRadius: 6, padding: '4px 8px' }}>
-              {[
-                { color: '#ef4444', label: 'Danger' },
-                { color: '#f97316', label: 'Warning' },
-                { color: '#22c55e', label: 'Clear' },
-              ].map(item => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: item.color }} />
-                  <span style={{ fontSize: 9, color: '#94a3b8' }}>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Mapbox map — fills entire container */}
-      <Map
-        ref={mapRef}
-        mapboxAccessToken={MAPBOX_TOKEN}
-        initialViewState={{ longitude: 80.27, latitude: 13.08, zoom: 2 }}
-        mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
-        projection={projection as any}
-        cursor="crosshair"
-        onClick={handleMapClick}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        onMouseDown={handleInteractionStart}
-        onMouseUp={handleInteractionEnd}
-        onTouchStart={handleInteractionStart}
-        onTouchEnd={handleInteractionEnd}
-        onWheel={handleInteractionStart}
-        onMove={(e) => setZoom(e.viewState.zoom)}
-        onLoad={onMapLoad}
-        fog={{
-          color: '#0a0a1a',
-          'high-color': '#1a3a6e',
-          'horizon-blend': 0.04,
-          'space-color': '#050510',
-          'star-intensity': 0.8
-        }}
-        style={{ width: '100%', height: '100%' }}
-      >
-        {selectedLat !== null && selectedLon !== null && (
-          <Marker longitude={selectedLon} latitude={selectedLat} anchor="center">
-            {spiralMode ? (
-              <SpiralOverlay />
-            ) : (
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ width: 14, height: 14, borderRadius: '50%',
-                  background: '#ef4444', border: '3px solid white',
-                  boxShadow: '0 0 10px rgba(239,68,68,0.6)',
-                  margin: '0 auto' }} />
-                {nearestCity && (
-                  <div style={{ background: 'rgba(15,23,42,0.9)', color: 'white',
-                    fontSize: 10, padding: '2px 6px', borderRadius: 4, marginTop: 3,
-                    whiteSpace: 'nowrap', border: '1px solid #374151' }}>
-                    near {nearestCity}
-                  </div>
-                )}
-              </div>
-            )}
-          </Marker>
-        )}
-
-        {globalAlerts.map((alert) => (
-          <Marker
-            key={alert.city}
-            longitude={alert.lon}
-            latitude={alert.lat}
-            anchor="center"
-          >
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                setLocation(alert.lat, alert.lon);
-                mapRef.current?.flyTo({
-                  center: [alert.lon, alert.lat],
-                  zoom: 9, duration: 1200
-                });
-              }}
-              onMouseEnter={(e) => {
-                setHoveredAlert(alert);
-                setHoverPos({ x: e.clientX, y: e.clientY });
-              }}
-              onMouseLeave={() => setHoveredAlert(null)}
-              style={{ cursor: 'pointer', position: 'relative', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              {/* Outer pulsing ring */}
-              <div style={{
-                position: 'absolute',
-                top: '50%', left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: alert.severity === 'DANGER' ? 28 : 22,
-                height: alert.severity === 'DANGER' ? 28 : 22,
-                borderRadius: '50%',
-                background: alert.severity === 'DANGER' ? 'rgba(239,68,68,0.25)' :
-                             alert.severity === 'WARNING' ? 'rgba(249,115,22,0.25)' :
-                             alert.severity === 'INFO' ? 'rgba(234,179,8,0.2)' : 'transparent',
-                animation: alert.severity !== 'CLEAR' ? 'pulse 1.8s ease-in-out infinite' : 'none',
-              }} />
-              
-              {/* Inner dot */}
-              <div style={{
-                width: alert.severity === 'DANGER' ? 14 : 10,
-                height: alert.severity === 'DANGER' ? 14 : 10,
-                borderRadius: '50%',
-                background: alert.severity === 'DANGER' ? '#ef4444' :
-                             alert.severity === 'WARNING' ? '#f97316' :
-                             alert.severity === 'INFO' ? '#eab308' : '#22c55e',
-                border: `2px solid ${
-                  alert.severity === 'DANGER' ? '#fca5a5' :
-                  alert.severity === 'WARNING' ? '#fdba74' :
-                  alert.severity === 'INFO' ? '#fde68a' : '#86efac'
-                }`,
-                boxShadow: alert.severity === 'DANGER' 
-                  ? '0 0 8px rgba(239,68,68,0.8)' 
-                  : alert.severity === 'WARNING'
-                  ? '0 0 6px rgba(249,115,22,0.6)'
-                  : 'none',
-                position: 'relative',
-                zIndex: 1,
-              }} />
-
-              {/* City label below dot */}
-              <div style={{
-                position: 'absolute',
-                top: '100%', left: '50%',
-                transform: 'translateX(-50%)',
-                marginTop: 3,
-                background: 'rgba(0,0,0,0.75)',
-                color: alert.severity === 'DANGER' ? '#fca5a5' :
-                        alert.severity === 'WARNING' ? '#fdba74' :
-                        alert.severity === 'INFO' ? '#fde68a' : '#86efac',
-                fontSize: 9, fontWeight: 600,
-                padding: '1px 5px', borderRadius: 4,
-                whiteSpace: 'nowrap', pointerEvents: 'none',
-              }}>
-                {alert.city}
-              </div>
-            </div>
-          </Marker>
-        ))}
-
-        {cyclones.map(storm => (
-          <Marker
-            key={storm.id}
-            longitude={storm.currentLon}
-            latitude={storm.currentLat}
-            anchor="center"
-          >
-            <div
-              onClick={() => setActiveTab('cyclones')}
-              title={`${storm.name}: ${storm.category} · ${storm.currentWindKnots?.toFixed(0)} kts`}
-              style={{
-                fontSize: 20,
-                cursor: 'pointer',
-                animation: 'spin 4s linear infinite',
-                filter: 'drop-shadow(0 0 8px #3b82f6)',
-              }}>
-              🌀
-            </div>
-          </Marker>
-        ))}
-
-        {/* EARTHQUAKE MARKERS */}
-        {showEarthquakes && hazards.earthquakes?.map((eq: any) => (
-          <Marker
-            key={eq.id}
-            longitude={eq.lon}
-            latitude={eq.lat}
-            anchor="bottom"
-          >
-            <div
-              onClick={() => setHoveredAlert({ ...eq, type: 'earthquake' })}
-              style={{ cursor: 'pointer' }}
-              title={`M${eq.magnitude} - ${eq.place}`}
-            >
-              {/* Triangle shape */}
-              <div style={{
-                width: 0,
-                height: 0,
-                borderLeft: `${Math.max(7, eq.magnitude * 3)}px solid transparent`,
-                borderRight: `${Math.max(7, eq.magnitude * 3)}px solid transparent`,
-                borderBottom: `${Math.max(12, eq.magnitude * 5)}px solid ${
-                  eq.magnitude >= 7 ? '#ef4444' :
-                  eq.magnitude >= 6 ? '#f97316' :
-                  eq.magnitude >= 5 ? '#eab308' : '#94a3b8'
-                }`,
-                filter: eq.tsunami 
-                  ? 'drop-shadow(0 0 8px #3b82f6)' 
-                  : `drop-shadow(0 0 4px ${eq.magnitude >= 7 ? '#ef4444' : '#f97316'})`,
-                margin: '0 auto',
-              }} />
-              {/* Magnitude label */}
-              <div style={{
-                fontSize: 9,
-                color: 'white',
-                textAlign: 'center',
-                fontWeight: 700,
-                textShadow: '0 0 4px black, 0 0 4px black',
-                marginTop: 2,
-                whiteSpace: 'nowrap',
-              }}>
-                M{eq.magnitude?.toFixed(1)}
-                {eq.tsunami ? ' 🌊' : ''}
-              </div>
-            </div>
-          </Marker>
-        ))}
-
-        {showWildfires && hazards.wildfires?.filter((f: any) => f.frp > 50).map((fire: any, i: number) => (
-          <Marker
-            key={`fire_${i}`}
-            longitude={fire.lon}
-            latitude={fire.lat}
-            anchor="center"
-          >
-            <div
-              onClick={() => setHoveredAlert({ ...fire, type: 'wildfire' })}
-              style={{
-                cursor: 'pointer',
-                fontSize: fire.frp > 100 ? 16 : 12,
-                filter: `drop-shadow(0 0 4px orange)`,
-              }}
-              title={`Fire - FRP: ${fire.frp} MW`}
-            >
-              🔥
-            </div>
-          </Marker>
-        ))}
-      </Map>
-
-      {/* Hover Tooltip */}
-      {hoveredAlert && (
-        <div style={{
-          position: 'fixed',
-          left: hoverPos.x + 12,
-          top: hoverPos.y - 20,
-          zIndex: 1000,
-          background: '#0f172a',
-          border: `1px solid ${
-            hoveredAlert.type === 'earthquake' ? (hoveredAlert.magnitude >= 7 ? '#ef4444' : hoveredAlert.magnitude >= 6 ? '#f97316' : '#eab308') :
-            (hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '#ef4444' :
-            (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '#f97316' : '#eab308'
-          }`,
-          borderRadius: 8,
-          padding: '10px 14px',
-          minWidth: 200,
-          pointerEvents: 'auto',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-        }}>
-          {hoveredAlert?.type === 'earthquake' ? (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center',
-                gap: 6, marginBottom: 6 }}>
-                <span style={{ fontSize: 16 }}>
-                  {hoveredAlert.magnitude >= 7 ? '🔴' :
-                   hoveredAlert.magnitude >= 6 ? '🟠' : '🟡'}
-                </span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: 'white' }}>
-                  M{hoveredAlert.magnitude?.toFixed(1)} Earthquake
-                </span>
-              </div>
-              <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 4 }}>
-                {hoveredAlert.place}
-              </div>
-              <div style={{ fontSize: 11, color: '#94a3b8' }}>
-                Depth: {hoveredAlert.depth?.toFixed(0)}km
-                · {new Date(hoveredAlert.time).toLocaleDateString()}
-              </div>
-              {hoveredAlert.tsunami && (
-                <div style={{ fontSize: 12, color: '#3b82f6', 
-                  fontWeight: 600, marginTop: 4 }}>
-                  🌊 Tsunami warning issued
+                  ))}
                 </div>
               )}
-              <div style={{ fontSize: 11, color: '#6b7280', marginTop: 6 }}>
-                {hoveredAlert.recommendation}
-              </div>
-              <a href={hoveredAlert.url} target="_blank" rel="noopener"
-                style={{ fontSize: 11, color: '#60a5fa', display: 'block',
-                  marginTop: 6 }}>
-                View USGS report →
-              </a>
-            </>
-          ) : hoveredAlert?.type === 'wildfire' ? (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <span style={{ fontSize: 16 }}>🔥</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: 'white' }}>Wildfire Detected</span>
-              </div>
-              <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 4 }}>
-                FRP: {hoveredAlert.frp} MW
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center',
-                gap: 6, marginBottom: 6 }}>
-                <span style={{ fontSize: 12 }}>
-                  {(hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '🔴' :
-                   (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '🟠' : '🟡'}
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'white' }}>
-                  {hoveredAlert.city || hoveredAlert.place || 'Alert'}
-                </span>
-                <span style={{
-                  fontSize: 10, fontWeight: 700,
-                  color: (hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '#fca5a5' :
-                         (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '#fdba74' : '#fde68a',
-                  background: (hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '#450a0a' :
-                              (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '#431407' : '#422006',
-                  padding: '1px 6px', borderRadius: 10, marginLeft: 'auto'
-                }}>
-                  {hoveredAlert.severity}
-                </span>
-              </div>
-              <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 4 }}>
-                {hoveredAlert.label || (hoveredAlert.magnitude ? `Magnitude: ${hoveredAlert.magnitude}` : 'Fire Detected')}
-              </div>
-              {hoveredAlert.peakValue > 0 && (
-                <div style={{ fontSize: 11, color: '#94a3b8' }}>
-                  Peak: {hoveredAlert.peakValue}{hoveredAlert.unit}
-                  {(hoveredAlert.probability || 0) > 0 && ` · ${hoveredAlert.probability}% probability`}
-                </div>
-              )}
-              {hoveredAlert.recommendation && (
-                <div style={{ fontSize: 11, color: '#6b7280',
-                  marginTop: 6, lineHeight: 1.5,
-                  borderTop: '1px solid #1e293b', paddingTop: 6 }}>
-                  💡 {hoveredAlert.recommendation}
-                </div>
-              )}
-              <div style={{ fontSize: 10, color: '#475569', marginTop: 6 }}>
-                Click to view full forecast →
-              </div>
-            </>
+            </div>
           )}
         </div>
       )}
-
-      {/* DeepMind Branding — bottom left */}
-      <div style={{ position: 'absolute', bottom: 8, left: 8, zIndex: 10,
-        display: 'flex', alignItems: 'center', gap: 6 }}>
-        <div style={{ background: 'rgba(15,23,42,0.85)', border: '1px solid #1e3a5f',
-          borderRadius: 6, padding: '4px 10px', display: 'flex', 
-          alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 10, color: '#60a5fa', fontWeight: 600 }}>
-            ⚡ Google DeepMind
-          </span>
-          <span style={{ fontSize: 10, color: '#374151' }}>|</span>
-          <span style={{ fontSize: 10, color: '#9ca3af' }}>WeatherNext 2</span>
-        </div>
-      </div>
-
-      {/* Search bar — overlaid top center */}
-      <div style={{ position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', zIndex: 10, width: '320px' }}>
-        <div style={{ background: 'rgba(17,24,39,0.95)', border: '1px solid #374151', borderRadius: '12px', display: 'flex', alignItems: 'center', padding: '0 12px', gap: '8px', position: 'relative' }}>
-          <Search size={14} color="#9ca3af" />
-          <input
-            style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', fontSize: '13px', padding: '10px 0', flex: 1 }}
-            placeholder="Search city or enter lat, lon..."
-            value={searchQuery}
-            onChange={e => handleSearchChange(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
-          />
-          {showSuggestions && suggestions.length > 0 && (
-            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0,
-              background: 'rgba(15,23,42,0.98)', border: '1px solid #1e3a5f',
-              borderRadius: '0 0 12px 12px', overflow: 'hidden', zIndex: 20 }}>
-              {suggestions.map((s, i) => (
-                <div key={i}
-                  onClick={() => {
-                    mapRef.current?.flyTo({ center: [s.lon, s.lat], zoom: 9, duration: 1200 });
-                    setLocation(s.lat, s.lon);
-                    setSearchQuery(s.name);
-                    setShowSuggestions(false);
-                  }}
-                  style={{ padding: '8px 14px', fontSize: 13, color: '#e2e8f0',
-                    cursor: 'pointer', borderBottom: '1px solid #1e3a5f' }}
-                  onMouseEnter={e => (e.target as HTMLElement).style.background = 'rgba(37,99,235,0.3)'}
-                  onMouseLeave={e => (e.target as HTMLElement).style.background = 'transparent'}
-                >
-                  📍 {s.name}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Region presets — top right */}
       <div style={{ position: 'absolute', top: 56, right: 16, zIndex: 10 }}>
@@ -1018,6 +643,31 @@ export default function GlobalWeatherMap() {
             </span>
           )}
         </button>
+      </div>
+
+      {/* Global Scan Button & Legend */}
+      <div style={{ position: 'absolute', left: 16, bottom: 160, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <button onClick={runGlobalScan} disabled={isScanning} style={{
+          background: 'rgba(15,23,42,0.9)', border: '1px solid #dc2626',
+          borderRadius: 8, color: '#f87171', fontSize: 12, padding: '8px 14px',
+          cursor: isScanning ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: isScanning ? 0.7 : 1
+        }}>
+          {isScanning ? <Loader2 size={14} className="animate-spin" /> : <span style={{ fontSize: 14 }}>🌐</span>}
+          {isScanning ? 'Scanning...' : 'Scan Alerts'}
+        </button>
+        
+        <div style={{ background: 'rgba(15,23,42,0.7)', border: '1px solid #1e293b', borderRadius: 6, padding: '4px 8px' }}>
+          {[
+            { color: '#ef4444', label: 'Danger' },
+            { color: '#f97316', label: 'Warning' },
+            { color: '#22c55e', label: 'Clear' },
+          ].map(item => (
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: item.color }} />
+              <span style={{ fontSize: 9, color: '#94a3b8' }}>{item.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Coordinate display — bottom left */}
