@@ -759,10 +759,10 @@ export default function GlobalWeatherMap() {
 
       {/* Interactive Alert Summary Panel */}
       {globalAlerts.length > 0 && (
-        <div style={{ position: 'absolute', top: 60, left: '50%', transform: 'translateX(-50%)', width: 360, zIndex: 20 }}>
-          <div style={{ background: 'rgba(15,23,42,0.95)', border: '1px solid #1e293b', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+        <div style={{ position: 'absolute', top: 56, left: 16, right: 16, zIndex: 20 }}>
+          <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
             {/* Header row */}
-            <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: showAlertList ? '1px solid #1e293b' : 'none', cursor: 'pointer' }} onClick={() => setShowAlertList(!showAlertList)}>
+            <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: showAlertList ? '1px solid #1e293b' : 'none', cursor: 'pointer' }} onClick={() => setShowAlertList(!showAlertList)}>
               <span style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9' }}>🌐 Global Alert Scan</span>
               {/* Severity counts */}
               <div style={{ display: 'flex', gap: 6, marginLeft: 4 }}>
@@ -893,7 +893,7 @@ export default function GlobalWeatherMap() {
       </div>
 
       {/* Global Scan Button & Legend */}
-      <div style={{ position: 'absolute', left: 16, bottom: 120, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ position: 'absolute', left: 16, bottom: 160, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
         <button onClick={runGlobalScan} disabled={isScanning} style={{
           background: 'rgba(15,23,42,0.9)', border: '1px solid #dc2626',
           borderRadius: 8, color: '#f87171', fontSize: 12, padding: '8px 14px',

@@ -17,32 +17,38 @@ export async function GET(req: NextRequest) {
   const initDate = searchParams.get('initDate') || process.env.WEATHERNEXT_INIT_DATE || DEFAULT_INIT_DATE;
   const initHour = parseInt(searchParams.get('initHour') || '0', 10);
 
+  const dataset = process.env.BIGQUERY_DERIVED_DATASET || 'weathernext_derived';
+  const table = `ctoteam.${dataset}.cyclone_candidates`;
+
   try {
     const sql = `
       SELECT 
-        lat, lon, hours, forecast_time,
+        ROUND(lat,1) AS lat,
+        ROUND(lon,1) AS lon,
+        hours,
+        forecast_time,
         ROUND(pressure_hpa,1) AS pressure_hpa,
         ROUND(wind_knots,1) AS wind_knots,
         ROUND(wind_knots_max,1) AS wind_knots_max,
-        ROUND(pressure_min,1) AS pressure_min,
         cyclone_members,
         total_members,
         ROUND(cyclone_members/total_members*100,0) AS ensemble_probability
-      FROM \`ctoteam.weathernext_derived.cyclone_candidates\`
+      FROM \`${table}\`
       WHERE wind_knots > 34
         AND init_time = TIMESTAMP('${initDate} ${String(initHour).padStart(2, '0')}:00:00')
       ORDER BY pressure_hpa ASC, hours ASC
+      LIMIT 500
     `;
 
     const rows = await runQuery<any>(sql);
 
-    // Simple clustering: group points within 3 degrees of each other
+    // Simple clustering: group points within 8 degrees of each other
     const storms: any[] = [];
     
     rows.forEach(row => {
       let foundStorm = storms.find(s => 
-        Math.abs(s.currentLat - row.lat) < 3 && 
-        Math.abs(s.currentLon - row.lon) < 3
+        Math.abs(s.currentLat - row.lat) < 8 && 
+        Math.abs(s.currentLon - row.lon) < 8
       );
 
       const trackPoint = {
@@ -74,6 +80,7 @@ export async function GET(req: NextRequest) {
         storms.push({
           id: `storm-${storms.length + 1}`,
           name: `System ${storms.length + 1}`,
+          type: Math.abs(row.lat) > 35 ? 'Extratropical Cyclone' : 'Tropical Cyclone',
           category: getCategory(row.wind_knots_max),
           ensembleProbability: row.ensemble_probability,
           currentLat: row.lat,

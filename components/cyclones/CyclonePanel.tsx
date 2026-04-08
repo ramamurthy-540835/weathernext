@@ -9,7 +9,7 @@ import { useWeatherStore } from '../../store/useWeatherStore';
 
 export default function CyclonePanel() {
   const { initDate, initHour, leadHours, setLocation } = useWeatherStore();
-  const [storms, setStorms] = useState<any[]>([]);
+  const [cyclones, setCyclones] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedStorm, setSelectedStorm] = useState<any>(null);
 
@@ -19,10 +19,9 @@ export default function CyclonePanel() {
       try {
         const res = await fetch(`/api/cyclones?initDate=${initDate}&initHour=${initHour}`);
         const data = await res.json();
-        setStorms(data.storms || []);
-        if (data.storms?.length > 0) {
-          setSelectedStorm(data.storms[0]);
-        }
+        setCyclones(data.storms || []);
+        // Do not auto-select, show list first
+        setSelectedStorm(null);
       } catch (e) {
         console.error(e);
       } finally {
@@ -36,15 +35,99 @@ export default function CyclonePanel() {
     return <div style={{ padding: '16px', display: 'flex', justifyContent: 'center' }}><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>;
   }
 
-  if (storms.length === 0) {
+  if (!selectedStorm) {
+    if (cyclones.length === 0) {
+      return (
+        <div style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>🌀</div>
+          <p style={{ fontSize: 13, color: '#94a3b8' }}>
+            No storm systems detected
+          </p>
+          <p style={{ fontSize: 11, marginTop: 6 }}>
+            Scanning for pressure below 1005 hPa
+            and wind above 34 knots
+          </p>
+        </div>
+      );
+    }
+
     return (
-      <div style={{ textAlign: 'center', padding: '40px 16px', color: '#6b7280' }}>
-        <div>No cyclone systems detected in this forecast.</div>
+      <div style={{ padding: 16 }}>
+        <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 12 }}>
+          {cyclones.length} storm system{cyclones.length > 1 ? 's' : ''} detected
+          · Init: {initDate} {String(initHour).padStart(2, '0')}:00 UTC
+        </div>
+        
+        {cyclones.map(storm => (
+          <div key={storm.id} style={{
+            background: '#0f172a', border: '1px solid #1e3a5f',
+            borderRadius: 10, padding: 14, marginBottom: 10,
+            cursor: 'pointer'
+          }}
+          onClick={() => {
+            setSelectedStorm(storm);
+            setLocation(storm.currentLat, storm.currentLon);
+          }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between',
+              alignItems: 'flex-start', marginBottom: 8 }}>
+              <div>
+                <span style={{ fontSize: 16, marginRight: 8 }}>🌀</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'white' }}>
+                  {storm.name}
+                </span>
+                <div style={{ fontSize: 11, color: '#60a5fa', marginTop: 2 }}>
+                  {storm.type}
+                </div>
+              </div>
+              <span style={{
+                fontSize: 11, fontWeight: 700, padding: '3px 10px',
+                borderRadius: 20, background: '#1e3a5f', color: '#93c5fd'
+              }}>
+                {storm.category}
+              </span>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr',
+              gap: 8, fontSize: 12 }}>
+              <div>
+                <div style={{ color: '#64748b' }}>Pressure</div>
+                <div style={{ color: 'white', fontWeight: 500 }}>
+                  {storm.currentPressure} hPa
+                </div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b' }}>Max wind</div>
+                <div style={{ color: 'white', fontWeight: 500 }}>
+                  {storm.currentWindKnots?.toFixed(0)} knots
+                </div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b' }}>Position</div>
+                <div style={{ color: 'white', fontWeight: 500 }}>
+                  {Math.abs(storm.currentLat).toFixed(1)}°
+                  {storm.currentLat < 0 ? 'S' : 'N'} · 
+                  {Math.abs(storm.currentLon).toFixed(1)}°
+                  {storm.currentLon < 0 ? 'W' : 'E'}
+                </div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b' }}>Ensemble</div>
+                <div style={{ color: '#22c55e', fontWeight: 500 }}>
+                  {storm.ensembleProbability}% agreement
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ marginTop: 10, fontSize: 11,
+              color: '#60a5fa', textAlign: 'right' }}>
+              Click to view track →
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
-
-  if (!selectedStorm) return null;
 
   const chartData = selectedStorm.track.map((t: any) => {
     const date = new Date(t.forecastTime);
@@ -57,27 +140,12 @@ export default function CyclonePanel() {
 
   return (
     <div style={{ padding: '16px', color: 'white' }}>
-      {/* Storm Selector */}
-      {storms.length > 1 && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 8 }}>
-          {storms.map(s => (
-            <button
-              key={s.id}
-              onClick={() => {
-                setSelectedStorm(s);
-                setLocation(s.currentLat, s.currentLon);
-              }}
-              style={{
-                background: selectedStorm.id === s.id ? '#1e3a8a' : '#1f2937',
-                border: `1px solid ${selectedStorm.id === s.id ? '#3b82f6' : '#374151'}`,
-                borderRadius: 8, padding: '6px 12px', color: 'white', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap'
-              }}
-            >
-              {s.name} ({s.peakCategory})
-            </button>
-          ))}
-        </div>
-      )}
+      <button 
+        onClick={() => setSelectedStorm(null)}
+        style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: 12, cursor: 'pointer', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 4 }}
+      >
+        ← Back to storms
+      </button>
 
       {/* Header */}
       <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 10, padding: 16, marginBottom: 16 }}>
