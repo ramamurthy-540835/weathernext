@@ -69,11 +69,7 @@ export default function GlobalWeatherMap() {
     globalAlerts,
     setGlobalAlerts,
     isScanning,
-    setIsScanning,
-    showEarthquakes,
-    setShowEarthquakes,
-    earthquakes,
-    setEarthquakes
+    setIsScanning
   } = useWeatherStore();
 
   const [hoverCoords, setHoverCoords] = useState<{ lat: number; lon: number } | null>(null);
@@ -87,7 +83,10 @@ export default function GlobalWeatherMap() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showCities, setShowCities] = useState(true);
   const [cyclones, setCyclones] = useState<any[]>([]);
-  const [hoveredEq, setHoveredEq] = useState<any>(null);
+  
+  const [showEarthquakes, setShowEarthquakes] = useState(true);
+  const [showWildfires, setShowWildfires] = useState(true);
+  const [hazards, setHazards] = useState<any>({ earthquakes: [], wildfires: [], counts: { earthquakes: 0, wildfires: 0 } });
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -106,11 +105,32 @@ export default function GlobalWeatherMap() {
   }, [selectedLat, selectedLon]);
 
   useEffect(() => {
-    fetch('/api/earthquakes')
-      .then(r => r.json())
-      .then(d => setEarthquakes(d.earthquakes || []))
-      .catch(e => console.error(e));
-  }, [setEarthquakes]);
+    const timer = setTimeout(async () => {
+      try {
+        console.log('[Hazards] Fetching...');
+        const res = await fetch('/api/hazards');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        console.log('[Hazards] Got:', data.counts);
+        setHazards(data);
+      } catch (e) {
+        console.error('[Hazards] Failed:', e);
+        // Fallback - fetch earthquakes directly
+        try {
+          const eq = await fetch('/api/earthquakes');
+          const eqData = await eq.json();
+          setHazards({ 
+            earthquakes: eqData.earthquakes || [],
+            wildfires: [],
+            counts: { earthquakes: eqData.earthquakes?.length || 0, wildfires: 0 }
+          });
+        } catch (e2) {
+          console.error('[Earthquakes fallback] Failed:', e2);
+        }
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'cyclones' && cyclones.length === 0) {
@@ -383,6 +403,8 @@ export default function GlobalWeatherMap() {
   const warningCount = globalAlerts.filter(a => a.severity === 'WARNING').length;
   const clearCount = globalAlerts.filter(a => a.severity === 'CLEAR' || a.severity === 'INFO').length;
 
+  console.log('[Map] Rendering earthquakes:', hazards.earthquakes?.length, 'showEarthquakes:', showEarthquakes);
+
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <style>{`
@@ -394,6 +416,77 @@ export default function GlobalWeatherMap() {
         }
         .mapboxgl-ctrl-attrib a { color: #6b7280 !important; }
       `}</style>
+
+      {/* Interactive Alert Summary Panel */}
+      {globalAlerts.length > 0 && (
+        <div style={{ position: 'absolute', top: 56, left: 16, right: 16, zIndex: 20 }}>
+          <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+            {/* Header row */}
+            <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: showAlertList ? '1px solid #1e293b' : 'none', cursor: 'pointer' }} onClick={() => setShowAlertList(!showAlertList)}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9' }}>🌐 Global Alert Scan</span>
+              {/* Severity counts */}
+              <div style={{ display: 'flex', gap: 6, marginLeft: 4 }}>
+                {dangerCount > 0 && (
+                  <span style={{ fontSize: 11, fontWeight: 700, background: '#450a0a', color: '#fca5a5', padding: '2px 8px', borderRadius: 20 }}>🔴 {dangerCount} DANGER</span>
+                )}
+                {warningCount > 0 && (
+                  <span style={{ fontSize: 11, fontWeight: 700, background: '#431407', color: '#fdba74', padding: '2px 8px', borderRadius: 20 }}>🟠 {warningCount} WARNING</span>
+                )}
+                {clearCount > 0 && (
+                  <span style={{ fontSize: 11, background: '#052e16', color: '#86efac', padding: '2px 8px', borderRadius: 20 }}>✓ {clearCount} Clear</span>
+                )}
+              </div>
+              <span style={{ marginLeft: 'auto', fontSize: 10, color: '#64748b' }}>{showAlertList ? '▲ Hide' : '▼ Details'}</span>
+            </div>
+
+            {/* Expandable alert list */}
+            {showAlertList && (
+              <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+                {globalAlerts
+                  .sort((a, b) => {
+                    const order = { DANGER: 0, WARNING: 1, INFO: 2, CLEAR: 3 };
+                    return order[a.severity] - order[b.severity];
+                  })
+                  .map((alert) => (
+                  <div key={alert.city}
+                    onClick={() => {
+                      setShowAlertList(false);
+                      mapRef.current?.flyTo({ center: [alert.lon, alert.lat], zoom: 9, duration: 1200 });
+                      setLocation(alert.lat, alert.lon);
+                    }}
+                    style={{ padding: '10px 14px', borderBottom: '1px solid #0f172a', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 10, background: 'transparent', transition: 'background 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(30,58,138,0.2)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                  >
+                    {/* Severity dot */}
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, marginTop: 3, background: alert.severity === 'DANGER' ? '#ef4444' : alert.severity === 'WARNING' ? '#f97316' : alert.severity === 'INFO' ? '#eab308' : '#22c55e', boxShadow: alert.severity === 'DANGER' ? '0 0 8px rgba(239,68,68,0.8)' : 'none' }} />
+                    <div style={{ flex: 1 }}>
+                      {/* City + severity */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>{alert.city}</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: alert.severity === 'DANGER' ? '#fca5a5' : alert.severity === 'WARNING' ? '#fdba74' : alert.severity === 'INFO' ? '#fde68a' : '#86efac' }}>{alert.severity}</span>
+                      </div>
+                      {/* Alert label */}
+                      <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: alert.recommendation ? 4 : 0 }}>
+                        {alert.label}
+                        {alert.peakValue > 0 && (
+                          <span style={{ color: '#94a3b8', marginLeft: 6 }}>· Peak: {alert.peakValue}{alert.unit}{(alert.probability || 0) > 0 && ` · ${alert.probability}% prob`}</span>
+                        )}
+                      </div>
+                      {/* Recommendation */}
+                      {alert.recommendation && alert.severity !== 'CLEAR' && (
+                        <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5, marginTop: 3, paddingLeft: 8, borderLeft: '2px solid #3b82f6' }}>
+                          {alert.recommendation}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       
       {/* Mapbox map — fills entire container */}
       <Map
@@ -544,53 +637,62 @@ export default function GlobalWeatherMap() {
           </Marker>
         ))}
 
-        {showEarthquakes && earthquakes.map((eq) => (
+        {showEarthquakes && hazards.earthquakes?.map((eq: any) => (
           <Marker
             key={eq.id}
             longitude={eq.lon}
             latitude={eq.lat}
+            anchor="bottom"
+          >
+            <div
+              onClick={() => setHoveredAlert(eq)}
+              style={{ cursor: 'pointer' }}
+              title={`M${eq.magnitude} - ${eq.place}`}
+            >
+              <div style={{
+                width: 0, height: 0,
+                borderLeft: `${Math.max(6, eq.magnitude * 3)}px solid transparent`,
+                borderRight: `${Math.max(6, eq.magnitude * 3)}px solid transparent`,
+                borderBottom: `${Math.max(10, eq.magnitude * 5)}px solid ${
+                  eq.magnitude >= 7 ? '#ef4444' :
+                  eq.magnitude >= 6 ? '#f97316' :
+                  eq.magnitude >= 5 ? '#eab308' : '#94a3b8'
+                }`,
+              }} />
+              <div style={{
+                fontSize: 8, color: 'white', textAlign: 'center',
+                fontWeight: 700, textShadow: '0 0 3px black',
+                marginTop: 1, whiteSpace: 'nowrap',
+              }}>
+                M{eq.magnitude?.toFixed(1)}
+              </div>
+            </div>
+          </Marker>
+        ))}
+
+        {showWildfires && hazards.wildfires?.filter((f: any) => f.frp > 50).map((fire: any, i: number) => (
+          <Marker
+            key={`fire_${i}`}
+            longitude={fire.lon}
+            latitude={fire.lat}
             anchor="center"
           >
             <div
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(eq.url, '_blank');
+              onClick={() => setHoveredAlert(fire)}
+              style={{
+                cursor: 'pointer',
+                fontSize: fire.frp > 100 ? 16 : 12,
+                filter: `drop-shadow(0 0 4px orange)`,
               }}
-              onMouseEnter={(e) => {
-                setHoveredEq(eq);
-                setHoverPos({ x: e.clientX, y: e.clientY });
-              }}
-              onMouseLeave={() => setHoveredEq(null)}
-              style={{ cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title={`Fire - FRP: ${fire.frp} MW`}
             >
-              {eq.tsunami && (
-                <div style={{
-                  position: 'absolute',
-                  top: '50%', left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: 30, height: 30,
-                  borderRadius: '50%',
-                  border: '2px solid #ef4444',
-                  animation: 'pulse 1.5s ease-in-out infinite',
-                }} />
-              )}
-              <div style={{
-                width: 0, height: 0,
-                borderLeft: `${eq.magnitude * 1.5}px solid transparent`,
-                borderRight: `${eq.magnitude * 1.5}px solid transparent`,
-                borderBottom: `${eq.magnitude * 3}px solid ${
-                  eq.severity === 'MAJOR' ? '#ef4444' :
-                  eq.severity === 'STRONG' ? '#f97316' :
-                  eq.severity === 'MODERATE' ? '#eab308' : '#9ca3af'
-                }`,
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))'
-              }} />
+              🔥
             </div>
           </Marker>
         ))}
       </Map>
 
-      {/* Hover Tooltip for Alerts */}
+      {/* Hover Tooltip */}
       {hoveredAlert && (
         <div style={{
           position: 'fixed',
@@ -599,8 +701,8 @@ export default function GlobalWeatherMap() {
           zIndex: 1000,
           background: '#0f172a',
           border: `1px solid ${
-            hoveredAlert.severity === 'DANGER' ? '#ef4444' :
-            hoveredAlert.severity === 'WARNING' ? '#f97316' : '#eab308'
+            (hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '#ef4444' :
+            (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '#f97316' : '#eab308'
           }`,
           borderRadius: 8,
           padding: '10px 14px',
@@ -611,25 +713,25 @@ export default function GlobalWeatherMap() {
           <div style={{ display: 'flex', alignItems: 'center',
             gap: 6, marginBottom: 6 }}>
             <span style={{ fontSize: 12 }}>
-              {hoveredAlert.severity === 'DANGER' ? '🔴' :
-               hoveredAlert.severity === 'WARNING' ? '🟠' : '🟡'}
+              {(hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '🔴' :
+               (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '🟠' : '🟡'}
             </span>
             <span style={{ fontSize: 13, fontWeight: 600, color: 'white' }}>
-              {hoveredAlert.city}
+              {hoveredAlert.city || hoveredAlert.place || 'Alert'}
             </span>
             <span style={{
               fontSize: 10, fontWeight: 700,
-              color: hoveredAlert.severity === 'DANGER' ? '#fca5a5' :
-                     hoveredAlert.severity === 'WARNING' ? '#fdba74' : '#fde68a',
-              background: hoveredAlert.severity === 'DANGER' ? '#450a0a' :
-                          hoveredAlert.severity === 'WARNING' ? '#431407' : '#422006',
+              color: (hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '#fca5a5' :
+                     (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '#fdba74' : '#fde68a',
+              background: (hoveredAlert.severity === 'DANGER' || hoveredAlert.severity === 'MAJOR') ? '#450a0a' :
+                          (hoveredAlert.severity === 'WARNING' || hoveredAlert.severity === 'STRONG') ? '#431407' : '#422006',
               padding: '1px 6px', borderRadius: 10, marginLeft: 'auto'
             }}>
               {hoveredAlert.severity}
             </span>
           </div>
           <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 4 }}>
-            {hoveredAlert.label}
+            {hoveredAlert.label || (hoveredAlert.magnitude ? `Magnitude: ${hoveredAlert.magnitude}` : 'Fire Detected')}
           </div>
           {hoveredAlert.peakValue > 0 && (
             <div style={{ fontSize: 11, color: '#94a3b8' }}>
@@ -646,43 +748,6 @@ export default function GlobalWeatherMap() {
           )}
           <div style={{ fontSize: 10, color: '#475569', marginTop: 6 }}>
             Click to view full forecast →
-          </div>
-        </div>
-      )}
-
-      {/* Hover Tooltip for Earthquakes */}
-      {hoveredEq && (
-        <div style={{
-          position: 'fixed',
-          left: hoverPos.x + 12,
-          top: hoverPos.y - 20,
-          zIndex: 1000,
-          background: '#0f172a',
-          border: `1px solid ${
-            hoveredEq.severity === 'MAJOR' ? '#ef4444' :
-            hoveredEq.severity === 'STRONG' ? '#f97316' : '#eab308'
-          }`,
-          borderRadius: 8,
-          padding: '10px 14px',
-          minWidth: 200,
-          pointerEvents: 'none',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'white' }}>
-              M{hoveredEq.magnitude} Earthquake
-            </span>
-            {hoveredEq.tsunami && (
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#fca5a5', background: '#450a0a', padding: '1px 6px', borderRadius: 10, marginLeft: 'auto' }}>
-                🌊 TSUNAMI
-              </span>
-            )}
-          </div>
-          <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 4 }}>
-            {hoveredEq.place}
-          </div>
-          <div style={{ fontSize: 11, color: '#94a3b8' }}>
-            Depth: {hoveredEq.depth} km · {new Date(hoveredEq.time).toLocaleString()}
           </div>
         </div>
       )}
@@ -737,77 +802,6 @@ export default function GlobalWeatherMap() {
         </div>
       </div>
 
-      {/* Interactive Alert Summary Panel */}
-      {globalAlerts.length > 0 && (
-        <div style={{ position: 'absolute', top: 56, left: 16, right: 16, maxWidth: 360, zIndex: 20 }}>
-          <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
-            {/* Header row */}
-            <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: showAlertList ? '1px solid #1e293b' : 'none', cursor: 'pointer' }} onClick={() => setShowAlertList(!showAlertList)}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9' }}>🌐 Global Alert Scan</span>
-              {/* Severity counts */}
-              <div style={{ display: 'flex', gap: 6, marginLeft: 4 }}>
-                {dangerCount > 0 && (
-                  <span style={{ fontSize: 11, fontWeight: 700, background: '#450a0a', color: '#fca5a5', padding: '2px 8px', borderRadius: 20 }}>🔴 {dangerCount} DANGER</span>
-                )}
-                {warningCount > 0 && (
-                  <span style={{ fontSize: 11, fontWeight: 700, background: '#431407', color: '#fdba74', padding: '2px 8px', borderRadius: 20 }}>🟠 {warningCount} WARNING</span>
-                )}
-                {clearCount > 0 && (
-                  <span style={{ fontSize: 11, background: '#052e16', color: '#86efac', padding: '2px 8px', borderRadius: 20 }}>✓ {clearCount} Clear</span>
-                )}
-              </div>
-              <span style={{ marginLeft: 'auto', fontSize: 10, color: '#64748b' }}>{showAlertList ? '▲ Hide' : '▼ Details'}</span>
-            </div>
-
-            {/* Expandable alert list */}
-            {showAlertList && (
-              <div style={{ maxHeight: 320, overflowY: 'auto' }}>
-                {globalAlerts
-                  .sort((a, b) => {
-                    const order = { DANGER: 0, WARNING: 1, INFO: 2, CLEAR: 3 };
-                    return order[a.severity] - order[b.severity];
-                  })
-                  .map((alert) => (
-                  <div key={alert.city}
-                    onClick={() => {
-                      setShowAlertList(false);
-                      mapRef.current?.flyTo({ center: [alert.lon, alert.lat], zoom: 9, duration: 1200 });
-                      setLocation(alert.lat, alert.lon);
-                    }}
-                    style={{ padding: '10px 14px', borderBottom: '1px solid #0f172a', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 10, background: 'transparent', transition: 'background 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(30,58,138,0.2)'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
-                  >
-                    {/* Severity dot */}
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, marginTop: 3, background: alert.severity === 'DANGER' ? '#ef4444' : alert.severity === 'WARNING' ? '#f97316' : alert.severity === 'INFO' ? '#eab308' : '#22c55e', boxShadow: alert.severity === 'DANGER' ? '0 0 8px rgba(239,68,68,0.8)' : 'none' }} />
-                    <div style={{ flex: 1 }}>
-                      {/* City + severity */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>{alert.city}</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: alert.severity === 'DANGER' ? '#fca5a5' : alert.severity === 'WARNING' ? '#fdba74' : alert.severity === 'INFO' ? '#fde68a' : '#86efac' }}>{alert.severity}</span>
-                      </div>
-                      {/* Alert label */}
-                      <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: alert.recommendation ? 4 : 0 }}>
-                        {alert.label}
-                        {alert.peakValue > 0 && (
-                          <span style={{ color: '#94a3b8', marginLeft: 6 }}>· Peak: {alert.peakValue}{alert.unit}{(alert.probability || 0) > 0 && ` · ${alert.probability}% prob`}</span>
-                        )}
-                      </div>
-                      {/* Recommendation */}
-                      {alert.recommendation && alert.severity !== 'CLEAR' && (
-                        <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5, marginTop: 3, paddingLeft: 8, borderLeft: '2px solid #3b82f6' }}>
-                          {alert.recommendation}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Region presets — top right */}
       <div style={{ position: 'absolute', top: 56, right: 16, zIndex: 10 }}>
         <button onClick={() => setShowCities(!showCities)}
@@ -857,18 +851,60 @@ export default function GlobalWeatherMap() {
             <v.Icon size={16} />
           </button>
         ))}
+        
+        {/* Divider */}
+        <div style={{ height: 1, background: '#1e293b', margin: '4px 0' }} />
+
+        {/* Earthquake toggle */}
         <button
           onClick={() => setShowEarthquakes(!showEarthquakes)}
-          title="Earthquakes"
+          title={`Earthquakes ${hazards.earthquakes?.length ? '(' + hazards.earthquakes.length + ')' : ''}`}
           style={{
-            width: '40px', height: '40px', borderRadius: '10px', border: '1px solid',
-            borderColor: showEarthquakes ? '#ef4444' : '#374151',
-            background: showEarthquakes ? '#7f1d1d' : 'rgba(17,24,39,0.9)',
-            color: showEarthquakes ? 'white' : '#9ca3af',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-            marginTop: 8
+            width: 40, height: 40, borderRadius: 10,
+            border: `1px solid ${showEarthquakes ? '#ef4444' : '#374151'}`,
+            background: showEarthquakes ? 'rgba(239,68,68,0.2)' : 'rgba(15,23,42,0.9)',
+            color: showEarthquakes ? '#ef4444' : '#6b7280',
+            cursor: 'pointer', fontSize: 14, fontWeight: 700,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative',
           }}>
-          🌍
+          ▲
+          {hazards.earthquakes?.length > 0 && (
+            <span style={{
+              position: 'absolute', top: -5, right: -5,
+              background: '#ef4444', color: 'white',
+              fontSize: 8, borderRadius: 10, padding: '1px 3px',
+              fontWeight: 700, minWidth: 14, textAlign: 'center',
+            }}>
+              {hazards.earthquakes.length}
+            </span>
+          )}
+        </button>
+
+        {/* Wildfire toggle */}
+        <button
+          onClick={() => setShowWildfires(!showWildfires)}
+          title={`Wildfires ${hazards.wildfires?.length ? '(' + hazards.wildfires.length + ')' : ''}`}
+          style={{
+            width: 40, height: 40, borderRadius: 10,
+            border: `1px solid ${showWildfires ? '#f97316' : '#374151'}`,
+            background: showWildfires ? 'rgba(249,115,22,0.2)' : 'rgba(15,23,42,0.9)',
+            color: showWildfires ? '#f97316' : '#6b7280',
+            cursor: 'pointer', fontSize: 18,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative',
+          }}>
+          🔥
+          {hazards.wildfires?.length > 0 && (
+            <span style={{
+              position: 'absolute', top: -5, right: -5,
+              background: '#f97316', color: 'white',
+              fontSize: 8, borderRadius: 10, padding: '1px 3px',
+              fontWeight: 700, minWidth: 14, textAlign: 'center',
+            }}>
+              {Math.min(99, hazards.wildfires.length)}
+            </span>
+          )}
         </button>
       </div>
 
@@ -894,30 +930,6 @@ export default function GlobalWeatherMap() {
               <span style={{ fontSize: 9, color: '#94a3b8' }}>{item.label}</span>
             </div>
           ))}
-          {showEarthquakes && (
-            <div style={{ marginTop: 4, paddingTop: 4, borderTop: '1px solid #374151' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
-                <span style={{ color: '#9ca3af', fontSize: 10 }}>▲</span>
-                <span style={{ fontSize: 9, color: '#94a3b8' }}>M4-5</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
-                <span style={{ color: '#eab308', fontSize: 10 }}>▲</span>
-                <span style={{ fontSize: 9, color: '#94a3b8' }}>M5-6</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
-                <span style={{ color: '#f97316', fontSize: 10 }}>▲</span>
-                <span style={{ fontSize: 9, color: '#94a3b8' }}>M6-7</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
-                <span style={{ color: '#ef4444', fontSize: 10 }}>▲</span>
-                <span style={{ fontSize: 9, color: '#94a3b8' }}>M7+</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ fontSize: 10 }}>🌊</span>
-                <span style={{ fontSize: 9, color: '#94a3b8' }}>Tsunami</span>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
