@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const { lat, lon, forecastData, sector } = body;
 
     const model = genAI.getGenerativeModel({ 
-      model: process.env.GEMINI_MODEL_NAME || 'gemini-2.0-flash',
+      model: process.env.GEMINI_MODEL_NAME || 'gemini-3.1-pro-preview',
       systemInstruction: "You are a professional meteorologist. Write a concise 3-paragraph forecast briefing for emergency management officials based on this WeatherNext AI ensemble forecast data. Return ONLY a valid JSON object with no markdown, no code blocks, no ```json wrapper. Just the raw JSON starting with { and ending with }.\nStructure:\n{\n  \"summary\": \"three paragraph briefing text here\",\n  \"keyRisks\": [\"risk 1\", \"risk 2\"],\n  \"confidence\": \"High\" or \"Moderate\" or \"Low\",\n  \"recommendedActions\": [\"action 1\", \"action 2\", \"action 3\"]\n}"
     });
 
