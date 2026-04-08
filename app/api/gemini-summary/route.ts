@@ -6,18 +6,39 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { lat, lon, forecastData, sector } = body;
+    const { locationName = 'Unknown', lat, lon, initDate = 'Unknown', initHour = '00', forecastData, alerts = [] } = body;
 
     const model = genAI.getGenerativeModel({ 
       model: process.env.GEMINI_MODEL_NAME || 'gemini-3.1-pro-preview',
-      systemInstruction: "You are a professional meteorologist. Write a concise 3-paragraph forecast briefing for emergency management officials based on this WeatherNext AI ensemble forecast data. Return ONLY a valid JSON object with no markdown, no code blocks, no ```json wrapper. Just the raw JSON starting with { and ending with }.\nStructure:\n{\n  \"summary\": \"three paragraph briefing text here\",\n  \"keyRisks\": [\"risk 1\", \"risk 2\"],\n  \"confidence\": \"High\" or \"Moderate\" or \"Low\",\n  \"recommendedActions\": [\"action 1\", \"action 2\", \"action 3\"]\n}"
     });
 
-    const prompt = `
-      Location: Lat ${lat}, Lon ${lon}
-      Sector: ${sector || 'general'}
-      Forecast Data: ${JSON.stringify(forecastData).substring(0, 10000)}
-    `;
+    const prompt = `You are generating a decision-ready weather briefing using
+Google DeepMind WeatherNext 2 ensemble forecast data.
+
+LOCATION: ${locationName} (${lat}°N, ${lon}°E)
+INIT TIME: ${initDate} ${initHour}:00 UTC  
+MODEL: WeatherNext 2 · 64-member ensemble · ctoteam BigQuery
+
+FORECAST DATA: ${JSON.stringify(forecastData)}
+ALERTS: ${JSON.stringify(alerts)}
+
+Generate ONLY this JSON (no markdown, no code blocks):
+{
+  "summary": "Paragraph 1: Next 24h with ensemble mean + P90 values and member counts. Paragraph 2: Days 2-5 with probability language and timing. Paragraph 3: Key uncertainties - where spread is wide and confidence is low.",
+  "keyRisks": [
+    "Format: [X of 64 members (Y%)] show [condition] at [+Nh = Date UTC]",
+    "Format: P90 [variable] reaches [value] vs mean [value] — [spread level] spread"
+  ],
+  "recommendedActions": [
+    "Format: [Action] before [specific UTC time] — triggered if [threshold]",
+    "Format: Monitor [variable] at next init [date time UTC]"
+  ],
+  "confidence": "High (ensemble spread <2°C/<10mm) OR Moderate OR Low (spread >5°C/>30mm)",
+  "nextUpdateRecommended": "Check updated forecast at: [next init date time UTC]"
+}
+
+Use REAL numbers from the data. Every risk needs member count and probability.
+Every action needs specific UTC timing. Return ONLY the JSON.`;
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
