@@ -436,10 +436,19 @@ export default function GlobalWeatherMap() {
         .mapboxgl-ctrl-attrib a { color: #6b7280 !important; }
       `}</style>
 
-      {/* Interactive Alert Summary Panel */}
-      {globalAlerts.length > 0 && (
-        <div style={{ position: 'absolute', top: 56, left: 16, right: selectedLat ? 436 : 16, zIndex: 20 }}>
-          {scanMinimized ? (
+      {/* Global Scan Panel & Legend (Top Left) */}
+      <div style={{ position: 'absolute', top: 56, left: 16, right: selectedLat ? 436 : 16, zIndex: 20, pointerEvents: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ pointerEvents: 'auto', maxWidth: 360 }}>
+          {globalAlerts.length === 0 ? (
+            <button onClick={runGlobalScan} disabled={isScanning} style={{
+              background: 'rgba(15,23,42,0.95)', border: '1px solid #dc2626',
+              borderRadius: 8, color: '#f87171', fontSize: 12, padding: '8px 14px',
+              cursor: isScanning ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: isScanning ? 0.7 : 1
+            }}>
+              {isScanning ? <Loader2 size={14} className="animate-spin" /> : <span style={{ fontSize: 14 }}>🌐</span>}
+              {isScanning ? 'Scanning...' : 'Scan Alerts'}
+            </button>
+          ) : scanMinimized ? (
             <div style={{ background: 'rgba(15,23,42,0.95)', border: '1px solid #334155', borderRadius: 8, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', width: 'fit-content' }} onClick={() => setScanMinimized(false)}>
               <span style={{ fontSize: 12 }}>🌐</span>
               <span style={{ fontSize: 12, color: '#94a3b8' }}>Alert Scan</span>
@@ -449,7 +458,7 @@ export default function GlobalWeatherMap() {
               <span style={{ fontSize: 10, color: '#475569', marginLeft: 8 }}>▼ expand</span>
             </div>
           ) : (
-            <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', maxWidth: 360 }}>
+            <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
               {/* Header row */}
               <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: showAlertList ? '1px solid #1e293b' : 'none', cursor: 'pointer' }} onClick={() => setShowAlertList(!showAlertList)}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9' }}>🌐 Global Alert Scan</span>
@@ -516,7 +525,21 @@ export default function GlobalWeatherMap() {
             </div>
           )}
         </div>
-      )}
+        
+        {/* Compact legend directly below */}
+        <div style={{ background: 'rgba(15,23,42,0.7)', border: '1px solid #1e293b', borderRadius: 6, padding: '4px 8px', width: 'fit-content', pointerEvents: 'auto' }}>
+          {[
+            { color: '#ef4444', label: 'Danger' },
+            { color: '#f97316', label: 'Warning' },
+            { color: '#22c55e', label: 'Clear' },
+          ].map(item => (
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: item.color }} />
+              <span style={{ fontSize: 9, color: '#94a3b8' }}>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Region presets — top right */}
       <div style={{ position: 'absolute', top: 56, right: 16, zIndex: 10 }}>
@@ -645,31 +668,6 @@ export default function GlobalWeatherMap() {
         </button>
       </div>
 
-      {/* Global Scan Button & Legend */}
-      <div style={{ position: 'absolute', left: 16, bottom: 160, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <button onClick={runGlobalScan} disabled={isScanning} style={{
-          background: 'rgba(15,23,42,0.9)', border: '1px solid #dc2626',
-          borderRadius: 8, color: '#f87171', fontSize: 12, padding: '8px 14px',
-          cursor: isScanning ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: isScanning ? 0.7 : 1
-        }}>
-          {isScanning ? <Loader2 size={14} className="animate-spin" /> : <span style={{ fontSize: 14 }}>🌐</span>}
-          {isScanning ? 'Scanning...' : 'Scan Alerts'}
-        </button>
-        
-        <div style={{ background: 'rgba(15,23,42,0.7)', border: '1px solid #1e293b', borderRadius: 6, padding: '4px 8px' }}>
-          {[
-            { color: '#ef4444', label: 'Danger' },
-            { color: '#f97316', label: 'Warning' },
-            { color: '#22c55e', label: 'Clear' },
-          ].map(item => (
-            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
-              <div style={{ width: 7, height: 7, borderRadius: '50%', background: item.color }} />
-              <span style={{ fontSize: 9, color: '#94a3b8' }}>{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Coordinate display — bottom left */}
       <div style={{ position: 'absolute', bottom: '80px', left: '16px', zIndex: 10, background: 'rgba(17,24,39,0.85)', border: '1px solid #374151', borderRadius: '8px', padding: '6px 12px' }}>
         <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#d1d5db' }}>
@@ -752,7 +750,7 @@ export default function GlobalWeatherMap() {
         mapboxAccessToken={MAPBOX_TOKEN}
         initialViewState={{ longitude: 80.27, latitude: 13.08, zoom: 2 }}
         mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
-        projection={{ name: projection } as any}
+        projection={projection as any}
         cursor="crosshair"
         onClick={handleMapClick}
         onMouseMove={handleMouseMove}
@@ -1079,6 +1077,56 @@ export default function GlobalWeatherMap() {
           )}
         </div>
       )}
+
+      {/* DeepMind Branding — bottom left */}
+      <div style={{ position: 'absolute', bottom: 8, left: 8, zIndex: 10,
+        display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ background: 'rgba(15,23,42,0.85)', border: '1px solid #1e3a5f',
+          borderRadius: 6, padding: '4px 10px', display: 'flex', 
+          alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 10, color: '#60a5fa', fontWeight: 600 }}>
+            ⚡ Google DeepMind
+          </span>
+          <span style={{ fontSize: 10, color: '#374151' }}>|</span>
+          <span style={{ fontSize: 10, color: '#9ca3af' }}>WeatherNext 2</span>
+        </div>
+      </div>
+
+      {/* Search bar — overlaid top center */}
+      <div style={{ position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', zIndex: 10, width: '320px' }}>
+        <div style={{ background: 'rgba(17,24,39,0.95)', border: '1px solid #374151', borderRadius: '12px', display: 'flex', alignItems: 'center', padding: '0 12px', gap: '8px', position: 'relative' }}>
+          <Search size={14} color="#9ca3af" />
+          <input
+            style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', fontSize: '13px', padding: '10px 0', flex: 1 }}
+            placeholder="Search city or enter lat, lon..."
+            value={searchQuery}
+            onChange={e => handleSearchChange(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+          />
+          {showSuggestions && suggestions.length > 0 && (
+            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0,
+              background: 'rgba(15,23,42,0.98)', border: '1px solid #1e3a5f',
+              borderRadius: '0 0 12px 12px', overflow: 'hidden', zIndex: 20 }}>
+              {suggestions.map((s, i) => (
+                <div key={i}
+                  onClick={() => {
+                    mapRef.current?.flyTo({ center: [s.lon, s.lat], zoom: 9, duration: 1200 });
+                    setLocation(s.lat, s.lon);
+                    setSearchQuery(s.name);
+                    setShowSuggestions(false);
+                  }}
+                  style={{ padding: '8px 14px', fontSize: 13, color: '#e2e8f0',
+                    cursor: 'pointer', borderBottom: '1px solid #1e3a5f' }}
+                  onMouseEnter={e => (e.target as HTMLElement).style.background = 'rgba(37,99,235,0.3)'}
+                  onMouseLeave={e => (e.target as HTMLElement).style.background = 'transparent'}
+                >
+                  📍 {s.name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
     </div>
   );
