@@ -1,15 +1,15 @@
 steps:
   - name: 'gcr.io/cloud-builders/docker'
     secretEnv: ['MAPBOX_TOKEN']
+    entrypoint: 'bash'
     args:
-      - 'build'
-      - '--build-arg'
-      - 'NEXT_PUBLIC_MAPBOX_TOKEN=$$MAPBOX_TOKEN'
-      - '--build-arg'
-      - 'NEXT_PUBLIC_APP_NAME=WeatherNext Dashboard'
-      - '-t'
-      - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest'
-      - '.'
+      - '-c'
+      - |
+        docker build \
+          --build-arg NEXT_PUBLIC_MAPBOX_TOKEN="$$MAPBOX_TOKEN" \
+          --build-arg NEXT_PUBLIC_APP_NAME="WeatherNext Dashboard" \
+          -t us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest \
+          .
     timeout: '1200s'
 
   - name: 'gcr.io/cloud-builders/docker'
