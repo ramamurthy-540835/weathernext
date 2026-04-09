@@ -7,7 +7,7 @@ steps:
         gcloud secrets versions access latest \
           --secret=MAPBOX_TOKEN \
           --project=ctoteam > /workspace/mapbox_token.txt
-        echo "Token length: $(wc -c < /workspace/mapbox_token.txt)"
+        echo "Token retrieved: $(wc -c < /workspace/mapbox_token.txt) bytes"
 
   - name: 'gcr.io/cloud-builders/docker'
     entrypoint: 'bash'
@@ -15,7 +15,7 @@ steps:
       - '-c'
       - |
         MAPBOX_TOKEN=$(cat /workspace/mapbox_token.txt)
-        echo "Building with token: ${MAPBOX_TOKEN:0:20}..."
+        echo "Building with Mapbox token..."
         docker build \
           --build-arg NEXT_PUBLIC_MAPBOX_TOKEN="$MAPBOX_TOKEN" \
           --build-arg NEXT_PUBLIC_APP_NAME="WeatherNext Dashboard" \
