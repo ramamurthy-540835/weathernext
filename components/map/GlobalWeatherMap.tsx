@@ -494,7 +494,7 @@ export default function GlobalWeatherMap() {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .mapboxgl-ctrl-logo { display: none !important; }
         .mapboxgl-ctrl-attrib { 
           font-size: 9px !important; 
@@ -502,7 +502,7 @@ export default function GlobalWeatherMap() {
           color: #6b7280 !important;
         }
         .mapboxgl-ctrl-attrib a { color: #6b7280 !important; }
-      `}</style>
+      `}} />
 
       {/* Global Scan Panel & Legend (Top Left) */}
       <div style={{ position: 'absolute', top: 56, left: 16, right: selectedLat ? 436 : 16, zIndex: 20, pointerEvents: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
