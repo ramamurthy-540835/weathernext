@@ -458,15 +458,9 @@ export default function GlobalWeatherMap() {
               </span>
               
               {/* Summary counts */}
-              {isScanning ? (
-                <span style={{ fontSize: 11, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Loader2 size={12} className="animate-spin" /> Scanning...
-                </span>
-              ) : (
-                <span style={{ fontSize: 11, color: '#64748b' }}>
-                  {globalAlerts.length > 0 ? `${dangerCount} DANGER · ${warningCount} WARNING · ${clearCount} Clear` : 'Ready to scan'}
-                </span>
-              )}
+              <span style={{ fontSize: 11, color: '#64748b' }}>
+                {dangerCount} DANGER · {warningCount} WARNING · {clearCount} Clear
+              </span>
               
               {/* Inline legend - horizontal */}
               <div style={{ display: 'flex', gap: 8, marginLeft: 8,
