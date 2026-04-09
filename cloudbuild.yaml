@@ -1,15 +1,26 @@
 steps:
-  - name: 'gcr.io/cloud-builders/docker'
-    secretEnv: ['MAPBOX_TOKEN']
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
     args:
-      - 'build'
-      - '--build-arg'
-      - 'NEXT_PUBLIC_MAPBOX_TOKEN=$$MAPBOX_TOKEN'
-      - '--build-arg'
-      - 'NEXT_PUBLIC_APP_NAME=WeatherNext Dashboard'
-      - '-t'
-      - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest'
-      - '.'
+      - '-c'
+      - |
+        gcloud secrets versions access latest \
+          --secret=MAPBOX_TOKEN \
+          --project=ctoteam > /workspace/mapbox_token.txt
+        echo "Token length: $(wc -c < /workspace/mapbox_token.txt)"
+
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        MAPBOX_TOKEN=$(cat /workspace/mapbox_token.txt)
+        echo "Building with token: ${MAPBOX_TOKEN:0:20}..."
+        docker build \
+          --build-arg NEXT_PUBLIC_MAPBOX_TOKEN="$MAPBOX_TOKEN" \
+          --build-arg NEXT_PUBLIC_APP_NAME="WeatherNext Dashboard" \
+          -t us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest \
+          .
     timeout: '1200s'
 
   - name: 'gcr.io/cloud-builders/docker'
@@ -30,13 +41,8 @@ steps:
       - '--min-instances=1'
       - '--max-instances=5'
       - '--allow-unauthenticated'
-      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=ctoteam,BIGQUERY_PROJECT_ID=ctoteam,BIGQUERY_DATASET=weathernext_2,BIGQUERY_TABLE=weathernext_2_0_0,GEMINI_MODEL_NAME=gemini-3.1-pro-preview,NEXT_PUBLIC_APP_NAME=WeatherNext Dashboard'
+      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=ctoteam,BIGQUERY_PROJECT_ID=ctoteam,BIGQUERY_DATASET=weathernext_2,BIGQUERY_TABLE=weathernext_2_0_0,GEMINI_MODEL_NAME=gemini-3.1-pro-preview,NEXT_PUBLIC_APP_NAME=WeatherNext Dashboard,BIGQUERY_DERIVED_DATASET=weathernext_derived'
       - '--set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest,GOOGLE_API_KEY=GEMINI_API_KEY:latest'
-
-availableSecrets:
-  secretManager:
-    - versionName: projects/ctoteam/secrets/MAPBOX_TOKEN/versions/latest
-      env: 'MAPBOX_TOKEN'
 
 images:
   - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest'
