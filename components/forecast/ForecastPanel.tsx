@@ -94,6 +94,28 @@ export default function ForecastPanel() {
     );
   }, [leadHours, fullTimeseries.current]);
 
+  const dailySummary = useMemo(() => {
+    if (!data?.timeseries) return [];
+    const days: any[] = [];
+    for (let h = 24; h <= 120; h += 24) {
+      const row = fullTimeseries.current.find((t: any) => t.hours === h);
+      if (row) days.push({
+        label: h === 24 ? 'Tomorrow' : 
+               new Date(Date.now() + h * 3600000)
+                 .toLocaleDateString('en-GB', { weekday: 'short' }),
+        hours: h,
+        temp: row.tempMean?.toFixed(0),
+        rain: row.rainMean?.toFixed(1),
+        wind: row.windMean?.toFixed(0),
+        icon: row.rainMean > 5 ? '🌧️' : 
+              row.rainMean > 1 ? '🌦️' :
+              row.windMean > 15 ? '💨' :
+              row.tempMean > 38 ? '🌡️' : '☀️',
+      });
+    }
+    return days;
+  }, [data]);
+
   const handleGenerateSummary = async () => {
     if (!data) return;
     setIsGeneratingAI(true);
@@ -563,6 +585,33 @@ export default function ForecastPanel() {
         </div>
       ) : data ? (
         <>
+          {/* 5-Day Summary Cards */}
+          <div style={{ display: 'flex', gap: 8, padding: '12px 16px', overflowX: 'auto', borderBottom: '1px solid #1e293b' }}>
+            {dailySummary.map(day => (
+              <div key={day.hours} style={{
+                flex: '0 0 auto', minWidth: 72,
+                background: '#0f172a', border: '1px solid #1e293b',
+                borderRadius: 10, padding: '10px 8px', textAlign: 'center',
+                cursor: 'pointer',
+              }}
+              onClick={() => setLeadHours(day.hours)}>
+                <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4 }}>
+                  {day.label}
+                </div>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>{day.icon}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'white' }}>
+                  {day.temp}°C
+                </div>
+                <div style={{ fontSize: 10, color: '#3b82f6', marginTop: 2 }}>
+                  {day.rain}mm
+                </div>
+                <div style={{ fontSize: 10, color: '#94a3b8' }}>
+                  {day.wind}m/s
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* Summary Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '16px' }}>
             <div style={{ background: '#1f2937', borderRadius: '10px', padding: '12px', border: '1px solid #374151' }}>

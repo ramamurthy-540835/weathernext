@@ -70,9 +70,24 @@ function AlertsTab() {
   if (loading) return <div style={{ padding: '16px', display: 'flex', justifyContent: 'center' }}><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>;
   
   if (!alerts.length) return (
-    <div style={{ textAlign: 'center', padding: '40px 16px', color: '#6b7280' }}>
-      <CheckCircle size={32} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
-      <div>No active alerts for this location</div>
+    <div style={{ padding: 24, textAlign: 'center' }}>
+      <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+      <div style={{ fontSize: 15, fontWeight: 600, color: '#22c55e',
+        marginBottom: 8 }}>
+        All Clear
+      </div>
+      <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7 }}>
+        No significant weather alerts for this location.
+        WeatherNext 2 ensemble shows stable conditions
+        across all 64 forecast members.
+      </div>
+      <div style={{ marginTop: 16, padding: '10px 16px',
+        background: '#052e16', borderRadius: 8,
+        border: '1px solid #166534' }}>
+        <div style={{ fontSize: 11, color: '#86efac' }}>
+          Next recommended check: {initDate} +6h
+        </div>
+      </div>
     </div>
   );
 
@@ -118,10 +133,12 @@ export default function Page() {
     selectedLat, selectedLon, initDate, initHour, setInitDate, setInitHour, 
     goToPreviousInit, goToNextInit, isLatestInit, setLocation, projection, 
     setProjection, autoRotate, toggleAutoRotate, spiralMode, toggleSpiralMode,
-    setLeadHours, chatOpen, setChatOpen, activeTab, setActiveTab, isScanning
+    setLeadHours, chatOpen, setChatOpen, activeTab, setActiveTab, isScanning,
+    loadingCount
   } = useWeatherStore();
   
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [timeSinceUpdate, setTimeSinceUpdate] = useState('');
 
   useEffect(() => {
     useWeatherStore.getState().loadLatestDate();
@@ -148,10 +165,31 @@ export default function Page() {
     }
   }, []);
 
+  useEffect(() => {
+    const update = () => {
+      const initTimestamp = new Date(`${initDate}T${String(initHour).padStart(2,'0')}:00:00Z`);
+      const diffHours = Math.floor((Date.now() - initTimestamp.getTime()) / 3600000);
+      setTimeSinceUpdate(diffHours < 1 ? 'Just updated' :
+                         diffHours === 1 ? '1h ago' : `${diffHours}h ago`);
+    };
+    update();
+    const interval = setInterval(update, 60000);
+    return () => clearInterval(interval);
+  }, [initDate, initHour]);
+
   const isSidebarOpen = selectedLat !== null && selectedLon !== null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', overflow: 'hidden', background: '#030712', color: 'white' }}>
+      {loadingCount > 0 && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0,
+          height: 2, zIndex: 9999,
+          background: 'linear-gradient(90deg, #2563eb 0%, #7c3aed 50%, #2563eb 100%)',
+          backgroundSize: '200% 100%',
+          animation: 'shimmer 1.5s linear infinite',
+        }} />
+      )}
       {isScanning && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0,
@@ -228,10 +266,15 @@ export default function Page() {
           >›</button>
 
           {isLatestInit() && (
-            <span style={{ fontSize: 10, background: '#065f46', color: '#6ee7b7',
-              padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
-              LATEST
-            </span>
+            <>
+              <span style={{ fontSize: 10, background: '#065f46', color: '#6ee7b7',
+                padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
+                LATEST
+              </span>
+              <span style={{ fontSize: 9, color: '#64748b', marginLeft: 4 }}>
+                {timeSinceUpdate}
+              </span>
+            </>
           )}
 
           {!isLatestInit() && (
@@ -316,6 +359,38 @@ export default function Page() {
                     <X size={20} />
                   </button>
                 </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 6, padding: '8px 16px', borderBottom: '1px solid #1e293b' }}>
+                <button onClick={() => {
+                  const url = `${window.location.origin}?lat=${selectedLat}&lon=${selectedLon}&date=${initDate}`;
+                  navigator.clipboard.writeText(url);
+                }} style={{ flex: 1, padding: '5px 0', fontSize: 11,
+                  background: '#1e293b', border: 'none', borderRadius: 6,
+                  color: '#94a3b8', cursor: 'pointer' }}>
+                  🔗 Copy link
+                </button>
+                
+                <button onClick={() => {
+                  const text = encodeURIComponent(
+                    `WeatherNext AI Forecast\n` +
+                    `📍 ${selectedLat?.toFixed(2)}°N, ${selectedLon?.toFixed(2)}°E\n` +
+                    `📅 ${initDate} ${initHour}:00 UTC\n` +
+                    `Powered by Google DeepMind WeatherNext 2`
+                  );
+                  window.open(`https://wa.me/?text=${text}`, '_blank');
+                }} style={{ flex: 1, padding: '5px 0', fontSize: 11,
+                  background: '#064e3b', border: 'none', borderRadius: 6,
+                  color: '#6ee7b7', cursor: 'pointer' }}>
+                  📱 WhatsApp
+                </button>
+                
+                <button onClick={() => window.print()}
+                  style={{ flex: 1, padding: '5px 0', fontSize: 11,
+                  background: '#1e293b', border: 'none', borderRadius: 6,
+                  color: '#94a3b8', cursor: 'pointer' }}>
+                  📄 Print
+                </button>
               </div>
 
               {/* Tabs */}

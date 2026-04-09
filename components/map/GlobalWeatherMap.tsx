@@ -798,7 +798,7 @@ export default function GlobalWeatherMap() {
                 : 'linear-gradient(to right, #3b82f6, #ffffff, #ef4444)'
             }} />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#64748b', marginTop: 2 }}>
+          <div style={{ display: 'flex', justify-content: 'space-between', fontSize: 9, color: '#64748b', marginTop: 2 }}>
             <span>{VARIABLE_MIN[activeVariable]}</span>
             <span>{VARIABLE_MAX[activeVariable]}</span>
           </div>
@@ -898,81 +898,29 @@ export default function GlobalWeatherMap() {
           </Marker>
         )}
 
-        {globalAlerts.map((alert) => (
-          <Marker
-            key={alert.city}
-            longitude={alert.lon}
-            latitude={alert.lat}
-            anchor="center"
-          >
+        {globalAlerts.map(alert => alert.severity !== 'CLEAR' && (
+          <Marker key={`alert_${alert.city}`}
+            longitude={alert.lon} latitude={alert.lat} anchor="center">
             <div
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={() => {
                 setLocation(alert.lat, alert.lon);
                 mapRef.current?.flyTo({
-                  center: [alert.lon, alert.lat],
-                  zoom: 9, duration: 1200
+                  center: [alert.lon, alert.lat], zoom: 9
                 });
               }}
-              onMouseEnter={(e) => {
-                setHoveredAlert(alert);
-                setHoverPos({ x: e.clientX, y: e.clientY });
-              }}
-              onMouseLeave={() => setHoveredAlert(null)}
-              style={{ cursor: 'pointer', position: 'relative', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              {/* Outer pulsing ring */}
+              style={{ cursor: 'pointer' }}>
               <div style={{
-                position: 'absolute',
-                top: '50%', left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: alert.severity === 'DANGER' ? 28 : 22,
-                height: alert.severity === 'DANGER' ? 28 : 22,
-                borderRadius: '50%',
-                background: alert.severity === 'DANGER' ? 'rgba(239,68,68,0.25)' :
-                             alert.severity === 'WARNING' ? 'rgba(249,115,22,0.25)' :
-                             alert.severity === 'INFO' ? 'rgba(234,179,8,0.2)' : 'transparent',
-                animation: alert.severity !== 'CLEAR' ? 'pulse 1.8s ease-in-out infinite' : 'none',
-              }} />
-              
-              {/* Inner dot */}
-              <div style={{
-                width: alert.severity === 'DANGER' ? 14 : 10,
-                height: alert.severity === 'DANGER' ? 14 : 10,
+                width: alert.severity === 'DANGER' ? 16 : 12,
+                height: alert.severity === 'DANGER' ? 16 : 12,
                 borderRadius: '50%',
                 background: alert.severity === 'DANGER' ? '#ef4444' :
-                             alert.severity === 'WARNING' ? '#f97316' :
-                             alert.severity === 'INFO' ? '#eab308' : '#22c55e',
-                border: `2px solid ${
-                  alert.severity === 'DANGER' ? '#fca5a5' :
-                  alert.severity === 'WARNING' ? '#fdba74' :
-                  alert.severity === 'INFO' ? '#fde68a' : '#86efac'
-                }`,
-                boxShadow: alert.severity === 'DANGER' 
-                  ? '0 0 8px rgba(239,68,68,0.8)' 
-                  : alert.severity === 'WARNING'
-                  ? '0 0 6px rgba(249,115,22,0.6)'
-                  : 'none',
-                position: 'relative',
-                zIndex: 1,
+                            alert.severity === 'WARNING' ? '#f97316' : '#eab308',
+                border: '2px solid rgba(255,255,255,0.3)',
+                boxShadow: `0 0 ${alert.severity === 'DANGER' ? 10 : 6}px ${
+                  alert.severity === 'DANGER' ? 'rgba(239,68,68,0.8)' :
+                  'rgba(249,115,22,0.6)'}`,
+                animation: 'pulse 2s ease-in-out infinite',
               }} />
-
-              {/* City label below dot */}
-              <div style={{
-                position: 'absolute',
-                top: '100%', left: '50%',
-                transform: 'translateX(-50%)',
-                marginTop: 3,
-                background: 'rgba(0,0,0,0.75)',
-                color: alert.severity === 'DANGER' ? '#fca5a5' :
-                        alert.severity === 'WARNING' ? '#fdba74' :
-                        alert.severity === 'INFO' ? '#fde68a' : '#86efac',
-                fontSize: 9, fontWeight: 600,
-                padding: '1px 5px', borderRadius: 4,
-                whiteSpace: 'nowrap', pointerEvents: 'none',
-              }}>
-                {alert.city}
-              </div>
             </div>
           </Marker>
         ))}

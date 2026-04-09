@@ -192,6 +192,19 @@ export default function EnsembleViewer() {
             </div>
           </div>
 
+          <div style={{ padding: '8px 16px', background: '#0a1628', borderBottom: '1px solid #1e293b', marginBottom: '12px', borderRadius: '8px' }}>
+            <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.6 }}>
+              <span style={{ color: '#3b82f6', fontWeight: 600 }}>
+                {data?.members?.length || 64} ensemble members
+              </span>
+              {' '}each representing a plausible future. 
+              Tight clustering = high confidence. Wide spread = uncertainty.
+              {' '}
+              <span style={{ color: '#f59e0b' }}>Orange band</span>
+              {' '}= P10-P90 range.
+            </div>
+          </div>
+
           <div style={{ background: '#1f2937', borderRadius: '10px', padding: '12px', border: '1px solid #374151', marginBottom: '12px', height: '250px', position: 'relative' }}>
             <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10, display: 'flex', gap: '8px' }}>
               <button 

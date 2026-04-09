@@ -42,6 +42,7 @@ interface WeatherState {
   isScanning: boolean;
   showEarthquakes: boolean;
   earthquakes: any[];
+  loadingCount: number;
   
   setLocation: (lat: number | null, lon: number | null) => void;
   setActiveVariable: (variable: string) => void;
@@ -64,6 +65,8 @@ interface WeatherState {
   setIsScanning: (scanning: boolean) => void;
   setShowEarthquakes: (show: boolean) => void;
   setEarthquakes: (eqs: any[]) => void;
+  incrementLoading: () => void;
+  decrementLoading: () => void;
 }
 
 export const useWeatherStore = create<WeatherState>((set, get) => ({
@@ -88,6 +91,7 @@ export const useWeatherStore = create<WeatherState>((set, get) => ({
   isScanning: false,
   showEarthquakes: false,
   earthquakes: [],
+  loadingCount: 0,
 
   setLocation: (lat, lon) => set({ selectedLat: lat, selectedLon: lon }),
   setActiveVariable: (variable) => set({ activeVariable: variable }),
@@ -166,4 +170,6 @@ export const useWeatherStore = create<WeatherState>((set, get) => ({
   setIsScanning: (scanning) => set({ isScanning: scanning }),
   setShowEarthquakes: (show) => set({ showEarthquakes: show }),
   setEarthquakes: (eqs) => set({ earthquakes: eqs }),
+  incrementLoading: () => set(s => ({ loadingCount: s.loadingCount + 1 })),
+  decrementLoading: () => set(s => ({ loadingCount: Math.max(0, s.loadingCount - 1) })),
 }));
