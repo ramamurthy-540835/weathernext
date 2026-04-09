@@ -74,6 +74,7 @@ export default function GlobalWeatherMap() {
 
   const [hoverCoords, setHoverCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPlaceName, setSelectedPlaceName] = useState('');
   const [suggestions, setSuggestions] = useState<Array<{name: string, lat: number, lon: number}>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [zoom, setZoom] = useState(2);
@@ -105,10 +106,10 @@ export default function GlobalWeatherMap() {
   }, [isPlaying, leadHours, setLeadHours]);
 
   useEffect(() => {
-    if (selectedLat && selectedLon) {
+    if (selectedLat && selectedLon && !selectedPlaceName) {
       setSearchQuery(`${selectedLat.toFixed(4)}, ${selectedLon.toFixed(4)}`);
     }
-  }, [selectedLat, selectedLon]);
+  }, [selectedLat, selectedLon, selectedPlaceName]);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -195,24 +196,55 @@ export default function GlobalWeatherMap() {
       );
       const data = await res.json();
       if (data.features && data.features.length > 0) {
-        setSearchQuery(data.features[0].place_name.split(',').slice(0,2).join(','));
+        const placeName = data.features[0].place_name.split(',').slice(0,2).join(',');
+        setSearchQuery(placeName);
+        setSelectedPlaceName(placeName);
       } else {
         setSearchQuery(`${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+        setSelectedPlaceName('');
       }
     } catch {
       setSearchQuery(`${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+      setSelectedPlaceName('');
     }
   };
 
-  const handleMapClick = useCallback((e: any) => {
+  const handleMapClick = useCallback(async (event: any) => {
     setHoveredAlert(null);
     // Ignore clicks on overlay controls
-    const target = e.originalEvent?.target as HTMLElement;
+    const target = event.originalEvent?.target as HTMLElement;
     if (target && (target.closest('button') || target.closest('input'))) return;
     
-    const { lat, lng } = e.lngLat;
-    setLocation(lat, lng);
-    reverseGeocode(lat, lng);
+    const { lngLat } = event;
+    const lat = lngLat.lat;
+    const lon = lngLat.lng;
+    
+    // Set location immediately with coordinates
+    setLocation(lat, lon);
+    
+    // Reverse geocode to get actual place name
+    try {
+      const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+      const res = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${lon},${lat}.json` +
+        `?access_token=${token}&types=place,locality,neighborhood,region,country&limit=1`
+      );
+      const data = await res.json();
+      const placeName = data.features?.[0]?.place_name || 
+                        `${Math.abs(lat).toFixed(2)}°${lat >= 0 ? 'N' : 'S'} ` +
+                        `${Math.abs(lon).toFixed(2)}°${lon >= 0 ? 'E' : 'W'}`;
+      
+      const shortName = placeName.split(',').slice(0, 2).join(',');
+      // Update search bar with actual place name
+      setSearchQuery(shortName);
+      setSelectedPlaceName(shortName);
+      
+      console.log('[Map Click] Location:', placeName, lat, lon);
+    } catch (e) {
+      // Fallback to coordinates
+      setSearchQuery(`${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+      setSelectedPlaceName('');
+    }
   }, [setLocation]);
 
   const handleMouseMove = useCallback((e: any) => {
@@ -339,19 +371,55 @@ export default function GlobalWeatherMap() {
   }, []);
 
   const getNearestCity = (lat: number, lon: number) => {
-    let nearest = CITY_PRESETS[0];
+    const cities = [
+      { name: 'Chennai', lat: 13.08, lon: 80.27 },
+      { name: 'Dubai', lat: 25.20, lon: 55.27 },
+      { name: 'Mumbai', lat: 19.07, lon: 72.87 },
+      { name: 'Delhi', lat: 28.61, lon: 77.20 },
+      { name: 'Bangalore', lat: 12.97, lon: 77.59 },
+      { name: 'Kolkata', lat: 22.57, lon: 88.36 },
+      { name: 'Karachi', lat: 24.86, lon: 67.01 },
+      { name: 'Dhaka', lat: 23.81, lon: 90.41 },
+      { name: 'Riyadh', lat: 24.68, lon: 46.72 },
+      { name: 'Bangkok', lat: 13.75, lon: 100.52 },
+      { name: 'Singapore', lat: 1.35, lon: 103.82 },
+      { name: 'Tokyo', lat: 35.68, lon: 139.69 },
+      { name: 'Jakarta', lat: -6.21, lon: 106.85 },
+      { name: 'Nairobi', lat: -1.29, lon: 36.82 },
+      { name: 'Cairo', lat: 30.04, lon: 31.24 },
+      { name: 'Lagos', lat: 6.52, lon: 3.38 },
+      { name: 'London', lat: 51.51, lon: -0.13 },
+      { name: 'New York', lat: 40.71, lon: -74.01 },
+      { name: 'Los Angeles', lat: 34.05, lon: -118.24 },
+      { name: 'São Paulo', lat: -23.55, lon: -46.63 },
+      { name: 'Sydney', lat: -33.87, lon: 151.21 },
+      { name: 'Melbourne', lat: -37.81, lon: 144.96 },
+    ];
+    
+    // Calculate distance using Haversine formula
+    const R = 6371; // Earth radius km
+    let nearest = cities[0];
     let minDist = Infinity;
-    CITY_PRESETS.forEach(city => {
-      if (city.name === 'Global') return;
-      const dist = Math.sqrt(
-        Math.pow(city.lat - lat, 2) + Math.pow(city.lon - lon, 2)
-      );
-      if (dist < minDist) { minDist = dist; nearest = city; }
+    
+    cities.forEach(city => {
+      const dLat = (city.lat - lat) * Math.PI / 180;
+      const dLon = (city.lon - lon) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat * Math.PI/180) * Math.cos(city.lat * Math.PI/180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = city;
+      }
     });
-    return minDist < 5 ? nearest.name : null; // only show if within ~500km
+    
+    return { 
+      name: nearest.name, 
+      distKm: Math.round(minDist),
+      isNear: minDist < 50  // within 50km = "in" the city
+    };
   };
-
-  const nearestCity = selectedLat ? getNearestCity(selectedLat, selectedLon!) : null;
 
   const runGlobalScan = async () => {
     setIsScanning(true);
@@ -786,22 +854,45 @@ export default function GlobalWeatherMap() {
         style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }}
       >
         {selectedLat !== null && selectedLon !== null && (
-          <Marker longitude={selectedLon} latitude={selectedLat} anchor="center">
+          <Marker longitude={selectedLon} latitude={selectedLat} anchor="bottom">
             {spiralMode ? (
               <SpiralOverlay />
             ) : (
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ width: 14, height: 14, borderRadius: '50%',
-                  background: '#ef4444', border: '3px solid white',
-                  boxShadow: '0 0 10px rgba(239,68,68,0.6)',
-                  margin: '0 auto' }} />
-                {nearestCity && (
-                  <div style={{ background: 'rgba(15,23,42,0.9)', color: 'white',
-                    fontSize: 10, padding: '2px 6px', borderRadius: 4, marginTop: 3,
-                    whiteSpace: 'nowrap', border: '1px solid #374151' }}>
-                    near {nearestCity}
-                  </div>
-                )}
+              <div style={{ textAlign: 'center', cursor: 'pointer' }}
+                onClick={() => setHoveredAlert(null)}>
+                {/* Red pulsing dot */}
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <div style={{
+                    position: 'absolute', top: '50%', left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: 24, height: 24, borderRadius: '50%',
+                    background: 'rgba(239,68,68,0.25)',
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                  }} />
+                  <div style={{
+                    width: 12, height: 12, borderRadius: '50%',
+                    background: '#ef4444', border: '2px solid white',
+                    boxShadow: '0 0 8px rgba(239,68,68,0.6)',
+                    position: 'relative', zIndex: 1,
+                  }} />
+                </div>
+                
+                {/* Location label */}
+                {(() => {
+                  const nearest = getNearestCity(selectedLat, selectedLon);
+                  return (
+                    <div style={{
+                      background: 'rgba(15,23,42,0.9)',
+                      border: '1px solid #374151',
+                      borderRadius: 6, marginTop: 4,
+                      padding: '2px 8px', whiteSpace: 'nowrap',
+                    }}>
+                      <div style={{ fontSize: 11, color: 'white', fontWeight: 500 }}>
+                        {nearest.isNear ? nearest.name : `${nearest.distKm}km from ${nearest.name}`}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </Marker>
