@@ -798,7 +798,7 @@ export default function GlobalWeatherMap() {
                 : 'linear-gradient(to right, #3b82f6, #ffffff, #ef4444)'
             }} />
           </div>
-          <div style={{ display: 'flex', justify-content: 'space-between', fontSize: 9, color: '#64748b', marginTop: 2 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#64748b', marginTop: 2 }}>
             <span>{VARIABLE_MIN[activeVariable]}</span>
             <span>{VARIABLE_MAX[activeVariable]}</span>
           </div>
