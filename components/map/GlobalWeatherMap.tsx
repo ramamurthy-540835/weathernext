@@ -981,74 +981,83 @@ export default function GlobalWeatherMap() {
         ))}
       </Map>
 
-      {/* Hover Tooltip / Popup */}
+      {/* EARTHQUAKE / HAZARD POPUP */}
       {hoveredAlert && (
         <div style={{
-          position: 'fixed',
-          top: 80, left: 20,
-          zIndex: 1000,
+          position: 'absolute',
+          top: 80,
+          left: 20,
+          zIndex: 9999,
           background: '#0f172a',
           border: `2px solid ${
             hoveredAlert.type === 'earthquake'
               ? (hoveredAlert.magnitude >= 7 ? '#ef4444' : '#f97316')
-              : hoveredAlert.severity === 'DANGER' ? '#ef4444' : '#f97316'
+              : '#f97316'
           }`,
           borderRadius: 12,
           padding: 16,
           minWidth: 280,
           maxWidth: 340,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+          pointerEvents: 'all',
         }}>
           {/* Close button */}
           <button
             onClick={(e) => { e.stopPropagation(); setHoveredAlert(null); }}
-            style={{ position: 'absolute', top: 8, right: 10,
+            style={{
+              position: 'absolute', top: 8, right: 10,
               background: 'transparent', border: 'none',
-              color: '#64748b', cursor: 'pointer',
-              fontSize: 18, lineHeight: 1 }}>
-            ✕
+              color: '#94a3b8', cursor: 'pointer',
+              fontSize: 20, lineHeight: 1, padding: 0,
+            }}>
+            ×
           </button>
 
           {hoveredAlert.type === 'earthquake' ? (
             <>
               <div style={{ display: 'flex', alignItems: 'center',
-                gap: 8, marginBottom: 10 }}>
-                <span style={{ fontSize: 20 }}>
+                gap: 8, marginBottom: 10, paddingRight: 20 }}>
+                <span style={{ fontSize: 22 }}>
                   {hoveredAlert.magnitude >= 7 ? '🔴' :
                    hoveredAlert.magnitude >= 6 ? '🟠' : '🟡'}
                 </span>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'white' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'white' }}>
                     M{hoveredAlert.magnitude?.toFixed(1)} Earthquake
                   </div>
                   <div style={{ fontSize: 11, color: '#94a3b8' }}>
-                    USGS · {new Date(hoveredAlert.time).toLocaleDateString('en-GB', 
-                      { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {new Date(hoveredAlert.time).toLocaleDateString('en-GB', {
+                      day: 'numeric', month: 'short', year: 'numeric'
+                    })}
                   </div>
                 </div>
               </div>
-              
-              <div style={{ fontSize: 13, color: '#e2e8f0', marginBottom: 10,
-                lineHeight: 1.5 }}>
+
+              <div style={{ fontSize: 13, color: '#e2e8f0',
+                marginBottom: 12, lineHeight: 1.5 }}>
                 📍 {hoveredAlert.place}
               </div>
-              
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr',
-                gap: 8, marginBottom: 10 }}>
-                <div style={{ background: '#1e293b', borderRadius: 6,
-                  padding: '6px 10px' }}>
-                  <div style={{ fontSize: 10, color: '#64748b' }}>Depth</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: 'white' }}>
+                gap: 8, marginBottom: 12 }}>
+                <div style={{ background: '#1e293b', borderRadius: 8,
+                  padding: '8px 12px' }}>
+                  <div style={{ fontSize: 10, color: '#64748b',
+                    marginBottom: 2 }}>Depth</div>
+                  <div style={{ fontSize: 15, fontWeight: 600,
+                    color: 'white' }}>
                     {hoveredAlert.depth?.toFixed(0)} km
                   </div>
                 </div>
-                <div style={{ background: '#1e293b', borderRadius: 6,
-                  padding: '6px 10px' }}>
-                  <div style={{ fontSize: 10, color: '#64748b' }}>PAGER Alert</div>
-                  <div style={{ fontSize: 14, fontWeight: 600,
+                <div style={{ background: '#1e293b', borderRadius: 8,
+                  padding: '8px 12px' }}>
+                  <div style={{ fontSize: 10, color: '#64748b',
+                    marginBottom: 2 }}>Alert</div>
+                  <div style={{ fontSize: 15, fontWeight: 600,
                     color: hoveredAlert.alert === 'red' ? '#ef4444' :
                            hoveredAlert.alert === 'orange' ? '#f97316' :
-                           hoveredAlert.alert === 'yellow' ? '#eab308' : '#22c55e',
+                           hoveredAlert.alert === 'yellow' ? '#eab308' :
+                           '#22c55e',
                     textTransform: 'uppercase' }}>
                     {hoveredAlert.alert || 'green'}
                   </div>
@@ -1056,94 +1065,73 @@ export default function GlobalWeatherMap() {
               </div>
 
               {hoveredAlert.tsunami && (
-                <div style={{ background: '#0c4a6e', border: '1px solid #0284c7',
-                  borderRadius: 6, padding: '8px 10px', marginBottom: 10,
+                <div style={{ background: '#0c4a6e',
+                  border: '1px solid #0284c7', borderRadius: 8,
+                  padding: '8px 12px', marginBottom: 12,
                   display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 16 }}>🌊</span>
-                  <span style={{ fontSize: 12, color: '#7dd3fc', fontWeight: 600 }}>
-                    Tsunami warning was issued
+                  <span>🌊</span>
+                  <span style={{ fontSize: 12, color: '#7dd3fc',
+                    fontWeight: 600 }}>
+                    Tsunami warning issued
                   </span>
                 </div>
               )}
 
-              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 10,
-                lineHeight: 1.5 }}>
-                💡 {hoveredAlert.recommendation || 'Monitor local authorities for updates.'}
+              <div style={{ fontSize: 11, color: '#64748b',
+                marginBottom: 12, lineHeight: 1.6 }}>
+                💡 {hoveredAlert.recommendation}
               </div>
 
               <div style={{ display: 'flex', gap: 8 }}>
-                <a href={hoveredAlert.url} target="_blank" rel="noopener noreferrer"
-                  style={{ flex: 1, display: 'block', textAlign: 'center',
-                    padding: '6px 0', background: '#1e3a5f',
-                    border: '1px solid #2563eb', borderRadius: 6,
-                    color: '#60a5fa', fontSize: 11, textDecoration: 'none',
-                    cursor: 'pointer' }}>
-                  View USGS report →
+                <a href={hoveredAlert.url} target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ flex: 1, textAlign: 'center',
+                    padding: '7px 0', background: '#1e3a5f',
+                    border: '1px solid #2563eb', borderRadius: 8,
+                    color: '#60a5fa', fontSize: 12,
+                    textDecoration: 'none', display: 'block' }}>
+                  View USGS →
                 </a>
                 <button
                   onClick={() => {
-                    const text = encodeURIComponent(
+                    const t = encodeURIComponent(
                       `🔴 M${hoveredAlert.magnitude} Earthquake\n` +
                       `📍 ${hoveredAlert.place}\n` +
                       `Depth: ${hoveredAlert.depth?.toFixed(0)}km\n` +
-                      `${hoveredAlert.tsunami ? '🌊 Tsunami warning issued\n' : ''}` +
-                      `Source: USGS WeatherNext Platform`
+                      `${hoveredAlert.tsunami ? '🌊 Tsunami warning\n' : ''}` +
+                      `Source: WeatherNext Intelligence Platform`
                     );
-                    window.open(`https://wa.me/?text=${text}`, '_blank');
+                    window.open(`https://wa.me/?text=${t}`, '_blank');
                   }}
-                  style={{ flex: 1, padding: '6px 0', background: '#064e3b',
-                    border: 'none', borderRadius: 6, color: '#6ee7b7',
-                    fontSize: 11, cursor: 'pointer' }}>
+                  style={{ flex: 1, padding: '7px 0',
+                    background: '#064e3b', border: 'none',
+                    borderRadius: 8, color: '#6ee7b7',
+                    fontSize: 12, cursor: 'pointer' }}>
                   📱 Share
                 </button>
               </div>
             </>
-          ) : hoveredAlert.type === 'wildfire' ? (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <span style={{ fontSize: 16 }}>🔥</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: 'white' }}>Wildfire Detected</span>
-              </div>
-              <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 4 }}>
-                FRP: {hoveredAlert.frp} MW
-              </div>
-            </>
           ) : (
-            /* Weather alert popup */
             <>
               <div style={{ display: 'flex', alignItems: 'center',
-                gap: 6, marginBottom: 6 }}>
+                gap: 6, marginBottom: 8, paddingRight: 20 }}>
                 <span style={{ fontSize: 14 }}>
                   {hoveredAlert.severity === 'DANGER' ? '🔴' : '🟠'}
                 </span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'white' }}>
-                  {hoveredAlert.city || hoveredAlert.label}
-                </span>
-                <span style={{ fontSize: 10, fontWeight: 700, marginLeft: 'auto',
-                  color: hoveredAlert.severity === 'DANGER' ? '#fca5a5' : '#fdba74',
-                  background: hoveredAlert.severity === 'DANGER' ? '#450a0a' : '#431407',
-                  padding: '1px 6px', borderRadius: 10 }}>
-                  {hoveredAlert.severity}
+                <span style={{ fontSize: 14, fontWeight: 600,
+                  color: 'white' }}>
+                  {hoveredAlert.city || hoveredAlert.label || 'Alert'}
                 </span>
               </div>
-              <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 4 }}>
+              <div style={{ fontSize: 12, color: '#cbd5e1' }}>
                 {hoveredAlert.label}
               </div>
-              {hoveredAlert.peakValue > 0 && (
-                <div style={{ fontSize: 11, color: '#94a3b8' }}>
-                  Peak: {hoveredAlert.peakValue}{hoveredAlert.unit}
-                  {(hoveredAlert.probability || 0) > 0 && ` · ${hoveredAlert.probability}%`}
-                </div>
-              )}
               {hoveredAlert.recommendation && (
-                <div style={{ fontSize: 11, color: '#6b7280', marginTop: 6,
-                  lineHeight: 1.5, borderTop: '1px solid #1e293b', paddingTop: 6 }}>
+                <div style={{ fontSize: 11, color: '#64748b',
+                  marginTop: 8, lineHeight: 1.5 }}>
                   💡 {hoveredAlert.recommendation}
                 </div>
               )}
-              <div style={{ fontSize: 10, color: '#475569', marginTop: 6 }}>
-                Click to view full forecast →
-              </div>
             </>
           )}
         </div>
