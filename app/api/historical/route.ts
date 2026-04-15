@@ -22,8 +22,8 @@ export async function GET(req: NextRequest) {
       GROUP BY forecast_time
     ),
     onprem_actuals AS (
-      -- 2. THIS IS THE BIGLAKE CONNECTION
-      -- Querying an external table that points directly to NCM's on-premise storage
+      -- 2. THIS IS THE GCP BIGLAKE CONNECTION
+      -- Querying an external table via GCP BigLake that provides a connection directly to NCM's existing S3 storage
       -- Data never leaves the client's environment until query execution
       SELECT 
         observation_time,
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     // const [rows] = await bigquery.query({ query, params: { eventId } });
     
     // For the immediate demo, we return the structured mock data that the UI expects
-    // while the physical BigLake connection to NCM's on-premise servers is being provisioned.
+    // while the physical BigLake connection to NCM's existing S3 storage is being provisioned.
     const mockData = {
       event: eventId,
       metrics: {

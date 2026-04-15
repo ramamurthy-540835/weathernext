@@ -64,11 +64,11 @@ export default function ArchitectureView() {
           </div>
         </div>
         <div style={{ background: '#1f2937', padding: 12, borderRadius: 8 }}>
-          <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: 8 }}>Hybrid Deployment (BigLake)</div>
+          <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: 8 }}>Hybrid Deployment (GCP BigLake)</div>
           <ul style={{ margin: 0, paddingLeft: 16, listStyle: 'disc' }}>
             <li><strong>Cloud:</strong> Heavy AI inference runs on Google Cloud</li>
-            <li><strong>On-Premise:</strong> Historical actuals stay on NCM servers</li>
-            <li><strong>Federated Query:</strong> BigLake joins cloud forecasts with on-premise actuals securely</li>
+            <li><strong>Storage:</strong> Historical actuals stay in NCM's existing S3 storage</li>
+            <li><strong>Federated Query:</strong> GCP BigLake provides the connection to join cloud forecasts with existing S3 actuals securely</li>
           </ul>
         </div>
       </Section>
@@ -149,14 +149,14 @@ export default function ArchitectureView() {
           {/* BigLake Connection */}
           <g>
             <rect x="420" y="220" width="120" height="60" fill="#1f2937" stroke="#06b6d4" strokeWidth="2" rx="8"/>
-            <text x="480" y="245" textAnchor="middle" fill="#22d3ee" fontWeight="bold" fontSize="13">🔗 BigLake</text>
+            <text x="480" y="245" textAnchor="middle" fill="#22d3ee" fontWeight="bold" fontSize="13">🔗 GCP BigLake</text>
             <text x="480" y="265" textAnchor="middle" fill="#d1d5db" fontSize="10">Federated Query Engine</text>
           </g>
 
           {/* NCM On-Premise Storage */}
           <g>
             <rect x="420" y="400" width="120" height="80" fill="#1f2937" stroke="#10b981" strokeWidth="2" rx="8"/>
-            <text x="480" y="430" textAnchor="middle" fill="#34d399" fontWeight="bold" fontSize="13">🗄️ NCM Storage</text>
+            <text x="480" y="430" textAnchor="middle" fill="#34d399" fontWeight="bold" fontSize="13">🗄️ NCM Existing S3</text>
             <text x="480" y="450" textAnchor="middle" fill="#d1d5db" fontSize="11">Historical Actuals</text>
             <text x="480" y="465" textAnchor="middle" fill="#d1d5db" fontSize="11">(Radar, Stations)</text>
           </g>
@@ -227,7 +227,7 @@ export default function ArchitectureView() {
           <div style={{ background: '#1f2937', padding: 12, borderRadius: 8 }}>
             <div style={{ color: '#34d399', fontWeight: 600, marginBottom: 8 }}>Continuous Learning (Adaptive Forecasting)</div>
             <p style={{ margin: 0, fontSize: 12, color: '#d1d5db' }}>
-              Through the BigLake historical validation loop, the AI continuously compares its past forecasts against NCM's on-premise actuals. This feedback loop allows the model to tune its ensemble weights, ensuring the system gets better over time rather than remaining a static model.
+              Through the GCP BigLake historical validation loop, the AI continuously compares its past forecasts against NCM's existing S3 actuals. This feedback loop allows the model to tune its ensemble weights, ensuring the system gets better over time rather than remaining a static model.
             </p>
           </div>
         </div>
@@ -236,7 +236,7 @@ export default function ArchitectureView() {
       <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', padding: 16, borderRadius: 12, marginTop: 20 }}>
         <div style={{ color: '#86efac', fontWeight: 600, marginBottom: 8 }}>✓ Enterprise-Ready Architecture</div>
         <p style={{ margin: 0, fontSize: 12, color: '#d1d5db' }}>
-          This architecture provides the computational power of Google DeepMind while respecting data sovereignty and on-premise investments through BigLake federated queries.
+          This architecture provides the computational power of Google DeepMind while respecting data sovereignty and on-premise investments through GCP BigLake federated queries to existing S3 storage.
         </p>
       </div>
     </div>
