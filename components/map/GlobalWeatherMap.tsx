@@ -125,8 +125,9 @@ export default function GlobalWeatherMap() {
         // Fallback - fetch earthquakes directly
         try {
           const eq = await fetch('/api/earthquakes');
+          if (!eq.ok) throw new Error(`HTTP ${eq.status}`);
           const eqData = await eq.json();
-          setHazards({ 
+          setHazards({
             earthquakes: eqData.earthquakes || [],
             wildfires: [],
             counts: { earthquakes: eqData.earthquakes?.length || 0, wildfires: 0 }
@@ -142,9 +143,15 @@ export default function GlobalWeatherMap() {
   useEffect(() => {
     if (activeTab === 'cyclones' && cyclones.length === 0) {
       fetch(`/api/cyclones?initDate=${initDate}&initHour=${initHour}`)
-        .then(r => r.json())
+        .then(r => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
         .then(d => setCyclones(d.storms || []))
-        .catch(e => console.error(e));
+        .catch(e => {
+          console.error('[Cyclones] Fetch failed:', e);
+          setCyclones([]);
+        });
     }
   }, [activeTab, initDate, initHour, cyclones.length]);
 

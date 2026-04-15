@@ -18,12 +18,16 @@ export default function CyclonePanel() {
       setLoading(true);
       try {
         const res = await fetch(`/api/cyclones?initDate=${initDate}&initHour=${initHour}`);
+        if (!res.ok) {
+          throw new Error(`API error: ${res.status}`);
+        }
         const data = await res.json();
         setCyclones(data.storms || []);
         // Do not auto-select, show list first
         setSelectedStorm(null);
       } catch (e) {
-        console.error(e);
+        console.error('Cyclone fetch error:', e);
+        setCyclones([]);
       } finally {
         setLoading(false);
       }

@@ -18,10 +18,14 @@ export default function ForecastDays15() {
         const res = await fetch(
           `/api/forecast?lat=${selectedLat}&lon=${selectedLon}&initDate=${initDate}&initHour=${initHour}&maxHours=360`
         );
+        if (!res.ok) {
+          throw new Error(`API error: ${res.status}`);
+        }
         const data = await res.json();
         setForecast(data);
       } catch (e) {
         console.error('Forecast fetch error:', e);
+        setForecast(null);
       } finally {
         setLoading(false);
       }
