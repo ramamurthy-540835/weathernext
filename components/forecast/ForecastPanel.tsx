@@ -29,6 +29,7 @@ export default function ForecastPanel() {
   
   const [data, setData] = useState<ForecastData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [aiSummary, setAiSummary] = useState('');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [showDownloadDrawer, setShowDownloadDrawer] = useState(false);
@@ -42,6 +43,7 @@ export default function ForecastPanel() {
       setData(null);
       setAiSummary('');
       setBriefing(null);
+      setError(null);
       fullTimeseries.current = [];
       return;
     }
@@ -50,16 +52,18 @@ export default function ForecastPanel() {
       setLoading(true);
       setAiSummary('');
       setBriefing(null);
+      setError(null);
       try {
         // Fetch 15-day forecast (360 hours)
         const res = await fetch(`/api/forecast?lat=${selectedLat}&lon=${selectedLon}&initDate=${initDate}&initHour=${initHour}&maxHours=360`);
         if (!res.ok) {
-          console.error('Forecast API error:', res.status, res.statusText);
           throw new Error(`Failed to fetch forecast: ${res.status}`);
         }
         const json = await res.json();
         if (!json.timeseries || json.timeseries.length === 0) {
-          throw new Error('No forecast data returned');
+          setError('No forecast data available for this location and time.');
+          setData(null);
+          return;
         }
         setData(json);
         fullTimeseries.current = json.timeseries.map((t: any) => ({
@@ -72,13 +76,9 @@ export default function ForecastPanel() {
           windMax: t.windSpeed.max,
           pressure: t.pressureHpa
         }));
-      } catch (error) {
-        console.error('Forecast fetch error:', error);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
         setData(null);
-        // Optionally set error state to display to user
-        if (error instanceof Error) {
-          console.error('Details:', error.message);
-        }
       } finally {
         setLoading(false);
       }
@@ -602,6 +602,10 @@ export default function ForecastPanel() {
       {loading ? (
         <div style={{ padding: '16px', display: 'flex', justifyContent: 'center' }}>
           <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+        </div>
+      ) : error ? (
+        <div style={{ padding: '16px', color: '#ef4444', textAlign: 'center', fontSize: '14px' }}>
+          {error}
         </div>
       ) : data ? (
         <>
