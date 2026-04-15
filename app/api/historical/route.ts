@@ -60,6 +60,18 @@ export async function GET(req: NextRequest) {
         peakPredicted: "245mm",
         peakActual: "254mm"
       },
+      findings: {
+        summary: "Highest recorded rainfall in the UAE in 75 years. The AI ensemble successfully predicted the P90 tail-risk scenario 4 days in advance.",
+        infrastructureImpact: [
+          "DXB Airport: Operations suspended for 48 hours due to runway flooding.",
+          "Major Highways: Severe waterlogging on Sheikh Zayed Road (E11) and Emirates Road (E611).",
+          "Urban Areas: Significant drainage overflow in Al Ain and Dubai residential districts."
+        ]
+      },
+      regionalOutlook: {
+        pastWeek: "Stable high-pressure system. Minor early morning fog in the western region (Al Dhafra) reducing visibility to 1000m, clearing by 09:00 GST.",
+        futurePredictions: "High confidence (85% ensemble agreement) of dry, stable conditions for the next 10 days. Gradual temperature increase of 2-3°C expected across coastal areas."
+      },
       timeseries: [
         { time: "2024-04-15T12:00:00Z", predicted_rain: 10, actual_rain: 12 },
         { time: "2024-04-15T18:00:00Z", predicted_rain: 85, actual_rain: 90 },

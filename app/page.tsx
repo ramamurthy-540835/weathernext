@@ -9,7 +9,7 @@ import EnsembleViewer from '@/components/ensemble/EnsembleViewer';
 import CyclonePanel from '@/components/cyclones/CyclonePanel';
 import ArchitectureView from '@/components/ArchitectureView';
 import { useWeatherStore } from '@/store/useWeatherStore';
-import { X, Loader2, AlertTriangle, CheckCircle, Globe, Map as MapIcon, RefreshCw, Tornado, Zap, Database, PlayCircle } from 'lucide-react';
+import { X, Loader2, AlertTriangle, CheckCircle, Globe, Map as MapIcon, RefreshCw, Tornado, Zap, Database, PlayCircle, Info, Activity } from 'lucide-react';
 
 const TalkToData = dynamic(() => import('@/components/chat/TalkToData'), { ssr: false });
 
@@ -17,6 +17,16 @@ function HistoricalReplayTab() {
   const { selectedLat, selectedLon } = useWeatherStore();
   const [selectedEvent, setSelectedEvent] = useState('uae_rain_apr2024');
   const [isReplaying, setIsReplaying] = useState(false);
+  const [eventData, setEventData] = useState<any>(null);
+
+  useEffect(() => {
+    if (isReplaying) {
+      fetch(`/api/historical?eventId=${selectedEvent}`)
+        .then(res => res.json())
+        .then(data => setEventData(data))
+        .catch(err => console.error(err));
+    }
+  }, [isReplaying, selectedEvent]);
 
   return (
     <div style={{ padding: '16px', color: 'white' }}>
@@ -34,7 +44,11 @@ function HistoricalReplayTab() {
         <label style={{ display: 'block', fontSize: '13px', color: '#9ca3af', marginBottom: '8px' }}>Select Historical Event for Validation</label>
         <select 
           value={selectedEvent}
-          onChange={(e) => setSelectedEvent(e.target.value)}
+          onChange={(e) => {
+            setSelectedEvent(e.target.value);
+            setIsReplaying(false);
+            setEventData(null);
+          }}
           style={{ width: '100%', padding: '10px', background: '#1f2937', border: '1px solid #374151', borderRadius: '8px', color: 'white', fontSize: '14px' }}
         >
           <option value="uae_rain_apr2024">UAE Extreme Rainfall (April 15-16, 2024)</option>
@@ -48,36 +62,67 @@ function HistoricalReplayTab() {
         style={{ width: '100%', padding: '12px', background: isReplaying ? '#dc2626' : '#2563eb', border: 'none', borderRadius: '8px', color: 'white', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', marginBottom: '24px', transition: 'background 0.2s' }}
       >
         {isReplaying ? <Loader2 className="animate-spin" size={18} /> : <PlayCircle size={18} />}
-        {isReplaying ? 'Replaying Event Data...' : 'Start Historical Replay'}
+        {isReplaying ? 'Stop Replay' : 'Start Historical Replay'}
       </button>
 
-      <div style={{ background: '#1f2937', borderRadius: '12px', padding: '16px', border: '1px solid #374151' }}>
-        <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#e5e7eb' }}>Accuracy Benchmarking (Forecast vs Actual)</h4>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ background: '#111827', padding: '12px', borderRadius: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <span style={{ fontSize: '13px', color: '#9ca3af' }}>Precipitation (Peak)</span>
-              <span style={{ fontSize: '13px', color: '#22c55e', fontWeight: 600 }}>94% Accuracy</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-              <span style={{ color: '#60a5fa' }}>AI Forecast: 245mm (P90)</span>
-              <span style={{ color: '#f87171' }}>Actual: 254mm</span>
+      {isReplaying && eventData && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Accuracy Benchmarking */}
+          <div style={{ background: '#1f2937', borderRadius: '12px', padding: '16px', border: '1px solid #374151' }}>
+            <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#e5e7eb', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Activity size={16} color="#34d399" /> Accuracy Benchmarking
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ background: '#111827', padding: '12px', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '13px', color: '#9ca3af' }}>Precipitation (Peak)</span>
+                  <span style={{ fontSize: '13px', color: '#22c55e', fontWeight: 600 }}>{eventData.metrics.accuracy} Accuracy</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: '#60a5fa' }}>AI Forecast: {eventData.metrics.peakPredicted} (P90)</span>
+                  <span style={{ color: '#f87171' }}>Actual: {eventData.metrics.peakActual}</span>
+                </div>
+              </div>
+              <div style={{ background: '#111827', padding: '12px', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '13px', color: '#9ca3af' }}>Event Onset Timing</span>
+                  <span style={{ fontSize: '13px', color: '#22c55e', fontWeight: 600 }}>{eventData.metrics.timingOffset}</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div style={{ background: '#111827', padding: '12px', borderRadius: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <span style={{ fontSize: '13px', color: '#9ca3af' }}>Event Onset Timing</span>
-              <span style={{ fontSize: '13px', color: '#22c55e', fontWeight: 600 }}>±2 Hours</span>
+          {/* Key Findings & Infrastructure Impact */}
+          <div style={{ background: '#1f2937', borderRadius: '12px', padding: '16px', border: '1px solid #374151' }}>
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#e5e7eb', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <AlertTriangle size={16} color="#f59e0b" /> Key Findings & Infrastructure Impact
+            </h4>
+            <p style={{ fontSize: '13px', color: '#d1d5db', lineHeight: 1.6, marginBottom: '12px' }}>
+              {eventData.findings.summary}
+            </p>
+            <ul style={{ margin: 0, paddingLeft: '20px', color: '#9ca3af', fontSize: '12px', lineHeight: 1.6 }}>
+              {eventData.findings.infrastructureImpact.map((impact: string, idx: number) => (
+                <li key={idx} style={{ marginBottom: '6px' }}>{impact}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Regional Outlook */}
+          <div style={{ background: '#1f2937', borderRadius: '12px', padding: '16px', border: '1px solid #374151' }}>
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#e5e7eb', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Info size={16} color="#60a5fa" /> UAE Regional Outlook
+            </h4>
+            <div style={{ marginBottom: '12px' }}>
+              <strong style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>Past Week Feed:</strong>
+              <span style={{ fontSize: '13px', color: '#d1d5db', lineHeight: 1.5 }}>{eventData.regionalOutlook.pastWeek}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-              <span style={{ color: '#60a5fa' }}>AI Forecast: 14:00 UTC</span>
-              <span style={{ color: '#f87171' }}>Actual: 15:45 UTC</span>
+            <div>
+              <strong style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>Future Predictions:</strong>
+              <span style={{ fontSize: '13px', color: '#d1d5db', lineHeight: 1.5 }}>{eventData.regionalOutlook.futurePredictions}</span>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
