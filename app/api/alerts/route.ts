@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runQuery } from '../../../lib/bigquery';
-import { DEFAULT_INIT_DATE } from '../../../lib/constants';
+import { DEFAULT_INIT_DATE, FORECAST_CONFIG } from '../../../lib/constants';
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
-  
-  const lat = parseFloat(searchParams.get('lat') || '13.0');
-  const lon = parseFloat(searchParams.get('lon') || '80.25');
+
+  const lat = parseFloat(searchParams.get('lat') || '25.2');
+  const lon = parseFloat(searchParams.get('lon') || '55.27');
   const initDate = searchParams.get('initDate') || process.env.WEATHERNEXT_INIT_DATE || DEFAULT_INIT_DATE;
   const initHour = parseInt(searchParams.get('initHour') || '0', 10);
+  // Support extended 15-day forecast for alerts
+  const maxHours = Math.min(
+    parseInt(searchParams.get('maxHours') || '360', 10),
+    FORECAST_CONFIG.MAX_LEAD_HOURS
+  );
 
   const latMin = lat - 0.15;
   const latMax = lat + 0.15;
@@ -31,14 +36,15 @@ export async function GET(req: NextRequest) {
         COUNT(CASE WHEN e.total_precipitation_6hr*1000 > 50 THEN 1 END) AS heavy_rain_members,
         COUNT(CASE WHEN e.total_precipitation_6hr*1000 > 100 THEN 1 END) AS extreme_rain_members,
         COUNT(CASE WHEN SQRT(POW(e.10m_u_component_of_wind,2)+POW(e.10m_v_component_of_wind,2)) > 17 THEN 1 END) AS strong_wind_members,
-        COUNT(CASE WHEN e.2m_temperature-273.15 > 40 THEN 1 END) AS heat_stress_members,
+        COUNT(CASE WHEN e.2m_temperature-273.15 > 50 THEN 1 END) AS extreme_heat_members,
+        COUNT(CASE WHEN e.2m_temperature-273.15 > 48 THEN 1 END) AS heat_stress_members,
         COUNT(*) AS total_members
       FROM \`ctoteam.weathernext_2.weathernext_2_0_0\`,
            UNNEST(forecast) AS f, UNNEST(f.ensemble) AS e
       WHERE init_time = TIMESTAMP('${initDate} ${String(initHour).padStart(2, '0')}:00:00')
         AND ST_Y(geography) BETWEEN ${latMin} AND ${latMax}
         AND ST_X(geography) BETWEEN ${lonMin} AND ${lonMax}
-        AND f.hours <= 72
+        AND f.hours <= ${maxHours}
       GROUP BY 1, 2
       ORDER BY f.hours
     `;
@@ -51,6 +57,14 @@ export async function GET(req: NextRequest) {
 
     const alerts = [];
 
+    // Calculate forecast confidence based on lead time
+    const getConfidenceNote = (hours: number): string => {
+      if (hours <= 72) return '(HIGH confidence — Days 1-3)';
+      if (hours <= 120) return '(MODERATE confidence — Days 4-5)';
+      if (hours <= 240) return '(LOW-MODERATE confidence — Days 6-10)';
+      return '(LOW confidence — Days 11-15)';
+    };
+
     // Find peak values across all timesteps
     const peakRain = Math.max(...rows.map(r => r.rain_mm_max));
     const peakWind = Math.max(...rows.map(r => r.wind_ms_max));
@@ -59,6 +73,7 @@ export async function GET(req: NextRequest) {
     const maxHeavyRainProb = Math.max(...rows.map(r => r.heavy_rain_members / r.total_members));
     const maxExtremeRainProb = Math.max(...rows.map(r => r.extreme_rain_members / r.total_members));
     const maxWindProb = Math.max(...rows.map(r => r.strong_wind_members / r.total_members));
+    const maxExtremeHeatProb = Math.max(...rows.map(r => r.extreme_heat_members / r.total_members));
     const maxHeatProb = Math.max(...rows.map(r => r.heat_stress_members / r.total_members));
 
     const peakRainRow = rows.find(r => r.rain_mm_max === peakRain);
@@ -145,11 +160,16 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const response = NextResponse.json({ alerts, queryMeta: { rows: rows.length } });
-    response.headers.set('Cache-Control', 's-maxage=1800');
+    const response = NextResponse.json({ alerts, queryMeta: { rows: rows.length, cached: false, timestamp: new Date().toISOString() } });
+    // Aggressive caching: 30min (server) + 5min (browser)
+    response.headers.set('Cache-Control', 'public, s-maxage=1800, max-age=300, stale-while-revalidate=3600');
     return response;
   } catch (error) {
     console.error('Alerts API Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch alerts data' }, { status: 500 });
+    // Return cached response on error (stale-while-revalidate)
+    return NextResponse.json({ error: 'Failed to fetch alerts data', alerts: [] }, {
+      status: 500,
+      headers: { 'Cache-Control': 'public, max-age=60' }
+    });
   }
 }

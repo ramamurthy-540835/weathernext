@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import GlobalWeatherMap from '@/components/map/GlobalWeatherMap';
 import ForecastPanel from '@/components/forecast/ForecastPanel';
 import EnsembleViewer from '@/components/ensemble/EnsembleViewer';
 import CyclonePanel from '@/components/cyclones/CyclonePanel';
+import ArchitectureView from '@/components/ArchitectureView';
 import { useWeatherStore } from '@/store/useWeatherStore';
-import { X, Loader2, AlertTriangle, CheckCircle, Globe, Map as MapIcon, RefreshCw, Tornado } from 'lucide-react';
+import { X, Loader2, AlertTriangle, CheckCircle, Globe, Map as MapIcon, RefreshCw, Tornado, Zap } from 'lucide-react';
 
 const TalkToData = dynamic(() => import('@/components/chat/TalkToData'), { ssr: false });
 
@@ -15,24 +16,40 @@ function AlertsTab() {
   const { selectedLat, selectedLon, initDate, initHour, earthquakes } = useWeatherStore();
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [cachedLocation, setCachedLocation] = useState<string>('');
+
+  // Memoize earthquake filtering to prevent unnecessary re-computation
+  const nearbyEqs = useMemo(() => {
+    if (!earthquakes || selectedLat === null || selectedLon === null) return [];
+    return earthquakes.filter(eq =>
+      eq.magnitude >= 6.5 &&
+      Math.abs(eq.lat - selectedLat) < 5 &&
+      Math.abs(eq.lon - selectedLon) < 5
+    );
+  }, [earthquakes, selectedLat, selectedLon]);
 
   useEffect(() => {
     if (selectedLat === null || selectedLon === null || !initDate) return;
+
+    const locationKey = `${selectedLat},${selectedLon},${initDate},${initHour}`;
+    if (cachedLocation === locationKey) return; // Skip if same location
+
     const fetchAlerts = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/alerts?lat=${selectedLat}&lon=${selectedLon}&initDate=${initDate}&initHour=${initHour}`);
-        const data = await res.json();
-        
-        let combinedAlerts = data.alerts || [];
-        
-        // Merge major earthquakes near this location
-        const nearbyEqs = earthquakes.filter(eq => 
-          eq.magnitude >= 6.5 && 
-          Math.abs(eq.lat - selectedLat) < 5 && 
-          Math.abs(eq.lon - selectedLon) < 5
-        );
+        // Use AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
+        const res = await fetch(`/api/alerts?lat=${selectedLat}&lon=${selectedLon}&initDate=${initDate}&initHour=${initHour}`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        const data = await res.json();
+        let combinedAlerts = data.alerts || [];
+
+        // Merge earthquakes (already filtered via useMemo)
         nearbyEqs.forEach(eq => {
           if (eq.tsunami) {
             combinedAlerts.unshift({
@@ -58,14 +75,17 @@ function AlertsTab() {
         });
 
         setAlerts(combinedAlerts);
+        setCachedLocation(locationKey);
       } catch (e) {
-        console.error(e);
+        if (e instanceof Error && e.name !== 'AbortError') {
+          console.error(e);
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchAlerts();
-  }, [selectedLat, selectedLon, initDate, initHour, earthquakes]);
+  }, [selectedLat, selectedLon, initDate, initHour, nearbyEqs, cachedLocation]);
 
   if (loading) return <div style={{ padding: '16px', display: 'flex', justifyContent: 'center' }}><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>;
   
@@ -155,12 +175,12 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    // Auto-select Chennai on first load so data is visible immediately
+    // Auto-select Dubai on first load so data is visible immediately
     const { selectedLat, setLocation } = useWeatherStore.getState();
     if (!selectedLat) {
       // Small delay to let map render first
       setTimeout(() => {
-        setLocation(13.0827, 80.2707);
+        setLocation(25.20, 55.27);
       }, 1500);
     }
   }, []);
@@ -207,6 +227,15 @@ export default function Page() {
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '24px' }}>
+          <button
+            onClick={() => isSidebarOpen ? setActiveTab('architecture' as const) : setChatOpen(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#1f2937', padding: '4px 10px', borderRadius: '6px', color: '#d1d5db', border: '1px solid #374151', fontSize: '12px', cursor: 'pointer' }}
+            title="View WeatherNext Architecture & System Flow"
+          >
+            <Zap size={14} />
+            Architecture
+          </button>
+
           <button
             onClick={() => setProjection(projection === 'globe' ? 'mercator' : 'globe')}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#1f2937', padding: '4px 10px', borderRadius: '6px', color: '#d1d5db', border: '1px solid #374151', fontSize: '12px', cursor: 'pointer' }}
@@ -394,17 +423,17 @@ export default function Page() {
               </div>
 
               {/* Tabs */}
-              <div style={{ display: 'flex', borderBottom: '1px solid #1f2937' }}>
-                {(['forecast', 'ensemble', 'alerts', 'cyclones'] as const).map(tab => (
+              <div style={{ display: 'flex', borderBottom: '1px solid #1f2937', overflowX: 'auto' }}>
+                {(['forecast', 'ensemble', 'alerts', 'cyclones', 'architecture'] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    style={activeTab === tab 
-                      ? { flex: 1, padding: '10px', fontSize: '12px', fontWeight: 500, background: 'transparent', border: 'none', borderBottom: '2px solid #3b82f6', color: '#60a5fa', cursor: 'pointer', textTransform: 'capitalize' }
-                      : { flex: 1, padding: '10px', fontSize: '12px', fontWeight: 500, background: 'transparent', border: 'none', borderBottom: '2px solid transparent', color: '#6b7280', cursor: 'pointer', textTransform: 'capitalize' }
+                    style={activeTab === tab
+                      ? { flex: 1, padding: '10px', fontSize: '12px', fontWeight: 500, background: 'transparent', border: 'none', borderBottom: '2px solid #3b82f6', color: '#60a5fa', cursor: 'pointer', textTransform: 'capitalize', whiteSpace: 'nowrap' }
+                      : { flex: 1, padding: '10px', fontSize: '12px', fontWeight: 500, background: 'transparent', border: 'none', borderBottom: '2px solid transparent', color: '#6b7280', cursor: 'pointer', textTransform: 'capitalize', whiteSpace: 'nowrap' }
                     }
                   >
-                    {tab === 'cyclones' ? '🌀 Cyclones' : tab}
+                    {tab === 'cyclones' ? '🌀 Cyclones' : tab === 'architecture' ? '⚙️ Architecture' : tab}
                   </button>
                 ))}
               </div>
@@ -415,6 +444,7 @@ export default function Page() {
                 {activeTab === 'ensemble' && <EnsembleViewer />}
                 {activeTab === 'alerts' && <AlertsTab />}
                 {activeTab === 'cyclones' && <CyclonePanel />}
+                {activeTab === 'architecture' && <ArchitectureView />}
                 {activeTab === 'chat' && <TalkToData />}
               </div>
 

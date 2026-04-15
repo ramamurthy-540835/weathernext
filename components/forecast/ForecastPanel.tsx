@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { useWeatherStore } from '../../store/useWeatherStore';
 import { getAccuracyLabel, getErrorBand } from '../../lib/accuracy';
+import ForecastDays15 from '../ForecastDays15';
 
 interface ForecastData {
   location: { lat: number; lon: number };
@@ -50,9 +51,16 @@ export default function ForecastPanel() {
       setAiSummary('');
       setBriefing(null);
       try {
-        const res = await fetch(`/api/forecast?lat=${selectedLat}&lon=${selectedLon}&initDate=${initDate}&initHour=${initHour}`);
-        if (!res.ok) throw new Error('Failed to fetch forecast');
+        // Fetch 15-day forecast (360 hours)
+        const res = await fetch(`/api/forecast?lat=${selectedLat}&lon=${selectedLon}&initDate=${initDate}&initHour=${initHour}&maxHours=360`);
+        if (!res.ok) {
+          console.error('Forecast API error:', res.status, res.statusText);
+          throw new Error(`Failed to fetch forecast: ${res.status}`);
+        }
         const json = await res.json();
+        if (!json.timeseries || json.timeseries.length === 0) {
+          throw new Error('No forecast data returned');
+        }
         setData(json);
         fullTimeseries.current = json.timeseries.map((t: any) => ({
           ...t,
@@ -65,7 +73,12 @@ export default function ForecastPanel() {
           pressure: t.pressureHpa
         }));
       } catch (error) {
-        console.error(error);
+        console.error('Forecast fetch error:', error);
+        setData(null);
+        // Optionally set error state to display to user
+        if (error instanceof Error) {
+          console.error('Details:', error.message);
+        }
       } finally {
         setLoading(false);
       }
@@ -424,7 +437,7 @@ export default function ForecastPanel() {
       
       {/* Header Toggles */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 16px 0', gap: 8 }}>
-        <button 
+        <button
           onClick={handleGenerateBrief}
           disabled={isGeneratingBrief}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#1e3a8a', border: '1px solid #1e40af', borderRadius: '6px', padding: '4px 10px', color: 'white', fontSize: '12px', cursor: isGeneratingBrief ? 'not-allowed' : 'pointer', opacity: isGeneratingBrief ? 0.7 : 1 }}
@@ -432,12 +445,17 @@ export default function ForecastPanel() {
           {isGeneratingBrief ? <Loader2 size={14} className="animate-spin" /> : <ClipboardList size={14} />}
           Decision Brief
         </button>
-        <button 
+        <button
           onClick={() => setShowDownloadDrawer(!showDownloadDrawer)}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', background: showDownloadDrawer ? '#1e293b' : 'transparent', border: '1px solid #334155', borderRadius: '6px', padding: '4px 10px', color: '#9ca3af', fontSize: '12px', cursor: 'pointer' }}
         >
           <Download size={14} /> Export Data
         </button>
+      </div>
+
+      {/* 15-Day Forecast with Confidence Visualization */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <ForecastDays15 />
       </div>
 
       {/* Decision Brief Panel */}

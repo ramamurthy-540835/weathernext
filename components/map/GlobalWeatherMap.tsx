@@ -18,29 +18,29 @@ const VARIABLES = [
 ];
 
 const CITY_PRESETS = [
-  { name: 'Chennai',   lat: 13.08,  lon: 80.27,  zoom: 9  },
-  { name: 'Dubai',     lat: 25.20,  lon: 55.27,  zoom: 9  },
-  { name: 'Mumbai',    lat: 19.07,  lon: 72.87,  zoom: 9  },
-  { name: 'Delhi',     lat: 28.61,  lon: 77.20,  zoom: 9  },
-  { name: 'Bangalore', lat: 12.97,  lon: 77.59,  zoom: 9  },
-  { name: 'Kolkata',   lat: 22.57,  lon: 88.36,  zoom: 9  },
-  { name: 'Karachi',   lat: 24.86,  lon: 67.01,  zoom: 9  },
-  { name: 'Dhaka',     lat: 23.81,  lon: 90.41,  zoom: 9  },
-  { name: 'Riyadh',    lat: 24.68,  lon: 46.72,  zoom: 9  },
-  { name: 'Colombo',   lat: 6.93,   lon: 79.84,  zoom: 9  },
-  { name: 'Bangkok',   lat: 13.75,  lon: 100.52, zoom: 9  },
-  { name: 'Global',    lat: 20.0,   lon: 78.0,   zoom: 2  },
+  { name: 'Dubai',      lat: 25.20,  lon: 55.27,  zoom: 9  },
+  { name: 'Abu Dhabi',  lat: 24.45,  lon: 54.45,  zoom: 9  },
+  { name: 'Sharjah',    lat: 25.35,  lon: 55.50,  zoom: 9  },
+  { name: 'Ajman',      lat: 25.40,  lon: 55.40,  zoom: 9  },
+  { name: 'Ras Al Khaimah', lat: 25.78, lon: 56.10, zoom: 9 },
+  { name: 'Fujairah',   lat: 25.12,  lon: 56.35,  zoom: 9  },
+  { name: 'Umm Al Quwain', lat: 25.56, lon: 55.56, zoom: 9 },
+  { name: 'Mumbai',     lat: 19.07,  lon: 72.87,  zoom: 9  },
+  { name: 'Muscat',     lat: 23.61,  lon: 58.54,  zoom: 9  },
+  { name: 'Riyadh',     lat: 24.68,  lon: 46.72,  zoom: 9  },
+  { name: 'Qatar',      lat: 25.35,  lon: 51.18,  zoom: 9  },
+  { name: 'Global',     lat: 25.0,   lon: 55.0,   zoom: 2  },
 ];
 
+// UAE Emirates for alert scanning (all 7 emirates)
 const MAJOR_CITIES = [
-  { name: 'Chennai', lat: 13.08, lon: 80.27 },
-  { name: 'Mumbai', lat: 19.07, lon: 72.87 },
   { name: 'Dubai', lat: 25.20, lon: 55.27 },
-  { name: 'Delhi', lat: 28.61, lon: 77.20 },
-  { name: 'Bangalore', lat: 12.97, lon: 77.59 },
-  { name: 'Kolkata', lat: 22.57, lon: 88.36 },
-  { name: 'Karachi', lat: 24.86, lon: 67.01 },
-  { name: 'Dhaka', lat: 23.81, lon: 90.41 },
+  { name: 'Abu Dhabi', lat: 24.45, lon: 54.45 },
+  { name: 'Sharjah', lat: 25.35, lon: 55.50 },
+  { name: 'Ajman', lat: 25.40, lon: 55.40 },
+  { name: 'Ras Al Khaimah', lat: 25.78, lon: 56.10 },
+  { name: 'Fujairah', lat: 25.12, lon: 56.35 },
+  { name: 'Umm Al Quwain', lat: 25.56, lon: 55.56 },
 ];
 
 export default function GlobalWeatherMap() {
@@ -520,11 +520,11 @@ export default function GlobalWeatherMap() {
                 }
               }}>
               
-              <span style={{ fontSize: 12 }}>🌐</span>
+              <span style={{ fontSize: 12 }}>🇦🇪</span>
               <span style={{ fontSize: 12, color: '#f1f5f9', fontWeight: 600 }}>
-                Alert Scan
+                UAE Alert Scan
               </span>
-              
+
               {/* Summary counts */}
               <span style={{ fontSize: 11, color: '#64748b' }}>
                 {dangerCount} DANGER · {warningCount} WARNING · {clearCount} Clear
@@ -557,7 +557,7 @@ export default function GlobalWeatherMap() {
             <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', minWidth: 360 }}>
               {/* Header row */}
               <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: showAlertList ? '1px solid #1e293b' : 'none', cursor: 'pointer' }} onClick={() => setShowAlertList(!showAlertList)}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9' }}>🌐 Global Alert Scan</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9' }}>🇦🇪 UAE Alert Scan — All 7 Emirates</span>
                 {/* Severity counts */}
                 <div style={{ display: 'flex', gap: 6, marginLeft: 4 }}>
                   {dangerCount > 0 && (
@@ -957,6 +957,7 @@ export default function GlobalWeatherMap() {
             <div
               onClick={(e) => {
                 e.stopPropagation();
+                setLocation(eq.lat, eq.lon);
                 setHoveredAlert({ ...eq, type: 'earthquake' });
               }}
               style={{ cursor: 'pointer' }}

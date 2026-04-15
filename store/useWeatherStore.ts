@@ -36,14 +36,14 @@ interface WeatherState {
   projection: 'globe' | 'mercator';
   autoRotate: boolean;
   spiralMode: boolean;
-  activeTab: 'forecast' | 'ensemble' | 'alerts' | 'chat' | 'cyclones';
+  activeTab: 'forecast' | 'ensemble' | 'alerts' | 'chat' | 'cyclones' | 'architecture';
   chatOpen: boolean;
   globalAlerts: GlobalAlert[];
   isScanning: boolean;
   showEarthquakes: boolean;
   earthquakes: any[];
   loadingCount: number;
-  
+
   setLocation: (lat: number | null, lon: number | null) => void;
   setActiveVariable: (variable: string) => void;
   setLeadHours: (hours: number) => void;
@@ -59,7 +59,7 @@ interface WeatherState {
   setProjection: (proj: 'globe' | 'mercator') => void;
   toggleAutoRotate: () => void;
   toggleSpiralMode: () => void;
-  setActiveTab: (tab: 'forecast' | 'ensemble' | 'alerts' | 'chat' | 'cyclones') => void;
+  setActiveTab: (tab: 'forecast' | 'ensemble' | 'alerts' | 'chat' | 'cyclones' | 'architecture') => void;
   setChatOpen: (open: boolean) => void;
   setGlobalAlerts: (alerts: GlobalAlert[]) => void;
   setIsScanning: (scanning: boolean) => void;
@@ -80,7 +80,7 @@ export const useWeatherStore = create<WeatherState>((set, get) => ({
   latestAvailableDate: '2026-04-07',
   latestAvailableHour: 18,
   availableInitTimes: [],
-  bbox: REGION_PRESETS.CHENNAI,
+  bbox: REGION_PRESETS.DUBAI,
   isPlaying: false,
   projection: 'globe',
   autoRotate: true,

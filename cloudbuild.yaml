@@ -1,37 +1,102 @@
+# WeatherNext 2.0 Dashboard - Cloud Build Configuration for NCM UAE
+# 64-Member Ensemble + 15-Day Probabilistic Forecasting Platform
+
 steps:
+  # Step 1: Build Docker image with versioning and NCM metadata
   - name: 'gcr.io/cloud-builders/docker'
     secretEnv: ['MAPBOX_TOKEN']
     entrypoint: 'bash'
     args:
       - '-c'
       - |
+        BUILD_VERSION="3.0.0"
+        BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+        GIT_COMMIT="cloud-build"
+
         docker build \
           --build-arg NEXT_PUBLIC_MAPBOX_TOKEN="$$MAPBOX_TOKEN" \
           --build-arg NEXT_PUBLIC_APP_NAME="WeatherNext Dashboard" \
+          --build-arg BUILD_VERSION="$${BUILD_VERSION}" \
+          --build-arg BUILD_DATE="$${BUILD_DATE}" \
+          --build-arg GIT_COMMIT="$${GIT_COMMIT}" \
+          --build-arg BUILD_ENVIRONMENT=production \
           -t us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest \
+          -t us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:v3 \
+          -t us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:$${BUILD_VERSION} \
+          -t us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:uae-production \
           .
     timeout: '1200s'
+    id: 'build-image'
+
+  # Step 3: Push versioned images to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest'
+    waitFor: ['-']
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest']
+    args:
+      - 'push'
+      - '--all-tags'
+      - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard'
 
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:v3'
+
+  # Step 4: Deploy to Cloud Run with NCM UAE configuration (v3 optimized)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
       - 'run'
       - 'deploy'
       - 'weathernext-dashboard'
-      - '--image=us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest'
+      - '--image=us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:v3'
       - '--region=us-central1'
       - '--platform=managed'
       - '--port=8080'
       - '--memory=2Gi'
       - '--cpu=2'
       - '--min-instances=1'
-      - '--max-instances=5'
+      - '--max-instances=10'
       - '--allow-unauthenticated'
-      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=ctoteam,BIGQUERY_PROJECT_ID=ctoteam,BIGQUERY_DATASET=weathernext_2,BIGQUERY_TABLE=weathernext_2_0_0,GEMINI_MODEL_NAME=gemini-3.1-pro-preview,NEXT_PUBLIC_APP_NAME=WeatherNext Dashboard,BIGQUERY_DERIVED_DATASET=weathernext_derived'
-      - '--set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest,GOOGLE_API_KEY=GEMINI_API_KEY:latest'
+      - '--service-account=weathernext-dashboard@ctoteam.iam.gserviceaccount.com'
+      # Environment variables for production
+      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=ctoteam'
+      - '--update-env-vars=BIGQUERY_PROJECT_ID=ctoteam'
+      - '--update-env-vars=BIGQUERY_DATASET=weathernext_2'
+      - '--update-env-vars=BIGQUERY_TABLE=weathernext_2_0_0'
+      - '--update-env-vars=BIGQUERY_DERIVED_DATASET=weathernext_derived'
+      - '--update-env-vars=GEMINI_MODEL_NAME=gemini-3.1-pro-preview'
+      - '--update-env-vars=NEXT_PUBLIC_APP_NAME=WeatherNext Dashboard'
+      - '--update-env-vars=NCM_REGION=UAE'
+      - '--update-env-vars=FORECAST_DAYS=15'
+      - '--update-env-vars=ENSEMBLE_MEMBERS=64'
+      - '--update-env-vars=ENABLE_PROBABILISTIC_ALERTS=true'
+      - '--update-env-vars=ENABLE_TAIL_RISK_ANALYSIS=true'
+      - '--update-env-vars=CONFIDENCE_THRESHOLD_HIGH=0.8'
+      - '--update-env-vars=CONFIDENCE_THRESHOLD_LOW=0.5'
+      # Secrets from Secret Manager
+      - '--set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest'
+      - '--update-secrets=MAPBOX_TOKEN=MAPBOX_TOKEN:latest'
+    timeout: '600s'
+
+  # Step 5: Run smoke test
+  - name: 'gcr.io/cloud-builders/gke-deploy'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Waiting for Cloud Run service to be ready..."
+        sleep 10
+
+        SERVICE_URL=$(gcloud run services describe weathernext-dashboard --region us-central1 --format 'value(status.url)')
+        echo "Testing service at: $${SERVICE_URL}"
+
+        curl -f "$${SERVICE_URL}" || exit 1
+        echo "✓ Service health check passed"
 
 availableSecrets:
   secretManager:
@@ -40,9 +105,18 @@ availableSecrets:
 
 images:
   - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest'
+  - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:v3'
+  - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:uae-production'
 
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: 'E2_HIGHCPU_8'
+  substitutionOption: 'ALLOW_LOOSE'
 
-timeout: '1800s'
+timeout: '2400s'
+
+# Build trigger configuration
+substitutions:
+  _REGION: 'us-central1'
+  _SERVICE_NAME: 'weathernext-dashboard'
+  _ARTIFACT_REPO: 'weathernext'

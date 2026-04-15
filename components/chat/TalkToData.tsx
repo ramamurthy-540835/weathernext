@@ -11,11 +11,11 @@ export default function TalkToData() {
   const [loading, setLoading] = useState(false);
 
   const starterQuestions = [
-    "What is the flood risk this week?",
-    "Is there a cyclone forming?",
-    "Best time to fly from Chennai?",
-    "Will it rain tomorrow?",
-    "What does the pressure drop mean?"
+    "What's the dust storm risk (P90)?",
+    "Heat stress forecast for next 72h?",
+    "Any cyclone threat to UAE?",
+    "Wind patterns for maritime ops?",
+    "Extreme heat advisory needed?"
   ];
 
   const handleSend = async (text: string) => {
