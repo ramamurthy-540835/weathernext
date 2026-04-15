@@ -27,5 +27,13 @@ This document tracks the implementation status of the key requirements and AI di
 | Scalable AI Architecture | ✅ DONE | Cloud Run + BigQuery + BigLake hybrid deployment model. |
 
 ## Next Steps / Open Items
-- Await client feedback on the Historical Validation demo.
-- Proceed to detailed requirement workshop for physical on-premise BigLake connection provisioning.
+
+- [ ] **Await client feedback** on the Historical Validation demo.
+- [ ] **Physical BigLake Provisioning (The Actual Solution):**
+    - The current `app/api/historical/route.ts` demonstrates the federated query logic but returns mock data for the demo.
+    - To implement the real production solution, we need a detailed requirement workshop with NCM IT to:
+        1. Establish a secure network connection (Cloud VPN or Interconnect) to NCM's on-premise data center.
+        2. Configure an S3-compatible storage interface on their on-premise servers for the historical actuals.
+        3. Create a BigLake External Connection in Google Cloud pointing to their storage.
+        4. Define the external table (`ctoteam.ncm_onprem_ext.historical_station_data`).
+        5. Uncomment the actual `bigquery.query()` execution in the API route to run live federated queries.
