@@ -28,25 +28,27 @@ steps:
     timeout: '1200s'
     id: 'build-image'
 
-  # Step 3: Push versioned images to Artifact Registry
+  # Step 2: Push versioned images to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
       - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest'
-    waitFor: ['-']
+    waitFor: ['build-image']
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
       - '--all-tags'
       - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard'
+    waitFor: ['build-image']
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
       - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:v3'
+    waitFor: ['build-image']
 
-  # Step 4: Deploy to Cloud Run with NCM UAE configuration (v3 optimized)
+  # Step 3: Deploy to Cloud Run with NCM UAE configuration (v3 optimized)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -83,7 +85,7 @@ steps:
       - '--update-secrets=MAPBOX_TOKEN=MAPBOX_TOKEN:latest'
     timeout: '600s'
 
-  # Step 5: Run smoke test
+  # Step 4: Run smoke test
   - name: 'gcr.io/cloud-builders/gke-deploy'
     entrypoint: 'bash'
     args:
