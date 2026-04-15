@@ -101,7 +101,7 @@ export default function ForecastPanel() {
   const displayData = useMemo(() => {
     if (!fullTimeseries.current.length) return [];
     const windowStart = Math.max(0, leadHours - 24);
-    const windowEnd = Math.min(120, leadHours + 24);
+    const windowEnd = Math.min(360, leadHours + 24);  // Changed from 120 to 360 (15 days)
     return fullTimeseries.current.filter(
       d => d.hours >= windowStart && d.hours <= windowEnd
     );
@@ -110,7 +110,7 @@ export default function ForecastPanel() {
   const dailySummary = useMemo(() => {
     if (!data?.timeseries) return [];
     const days: any[] = [];
-    for (let h = 24; h <= 120; h += 24) {
+    for (let h = 24; h <= 360; h += 24) {  // Changed from 120 to 360 (15 days)
       const row = fullTimeseries.current.find((t: any) => t.hours === h);
       if (row) days.push({
         label: h === 24 ? 'Tomorrow' : 
@@ -603,7 +603,7 @@ export default function ForecastPanel() {
         </div>
       ) : data ? (
         <>
-          {/* 5-Day Summary Cards */}
+          {/* 15-Day Summary Cards (Horizontally Scrollable) */}
           <div style={{ display: 'flex', gap: 8, padding: '12px 16px', overflowX: 'auto', borderBottom: '1px solid #1e293b' }}>
             {dailySummary.map(day => (
               <div key={day.hours} style={{
@@ -674,8 +674,10 @@ export default function ForecastPanel() {
                   <XAxis dataKey="hours" stroke="#6b7280" fontSize={10} tickFormatter={(v) => `+${v}h`} />
                   <YAxis stroke="#6b7280" fontSize={10} domain={['auto', 'auto']} />
                   <Tooltip content={<CustomTooltip variable="temperature" unit="°C" />} />
-                  <ReferenceArea x1={0} x2={leadHours} fill="#22c55e" fillOpacity={0.03} />
-                  <ReferenceArea x1={72} x2={120} fill="#ef4444" fillOpacity={0.03} />
+                  <ReferenceArea x1={0} x2={72} fill="#22c55e" fillOpacity={0.05} label="HIGH" />
+                  <ReferenceArea x1={72} x2={120} fill="#f59e0b" fillOpacity={0.04} label="MODERATE" />
+                  <ReferenceArea x1={120} x2={240} fill="#f97316" fillOpacity={0.03} label="LOW-MOD" />
+                  <ReferenceArea x1={240} x2={360} fill="#ef4444" fillOpacity={0.02} label="LOW" />
                   <ReferenceLine x={72} stroke="#f97316" strokeDasharray="4 4" strokeWidth={1} label={{ value: '+72h', fill: '#f97316', fontSize: 9, position: 'insideTopLeft' }} />
                   <ReferenceLine x={leadHours} stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 4" label={{ value: `+${leadHours}h`, fill: '#60a5fa', fontSize: 10, position: 'top' }} />
                   <Area type="monotone" dataKey="tempMax" stroke="none" fill="rgba(245,158,11,0.15)" />
@@ -694,8 +696,10 @@ export default function ForecastPanel() {
                   <XAxis dataKey="hours" stroke="#6b7280" fontSize={10} tickFormatter={(v) => `+${v}h`} />
                   <YAxis stroke="#6b7280" fontSize={10} />
                   <Tooltip content={<CustomTooltip variable="rain" unit="mm" />} />
-                  <ReferenceArea x1={0} x2={leadHours} fill="#22c55e" fillOpacity={0.03} />
-                  <ReferenceArea x1={72} x2={120} fill="#ef4444" fillOpacity={0.03} />
+                  <ReferenceArea x1={0} x2={72} fill="#22c55e" fillOpacity={0.05} label="HIGH" />
+                  <ReferenceArea x1={72} x2={120} fill="#f59e0b" fillOpacity={0.04} label="MODERATE" />
+                  <ReferenceArea x1={120} x2={240} fill="#f97316" fillOpacity={0.03} label="LOW-MOD" />
+                  <ReferenceArea x1={240} x2={360} fill="#ef4444" fillOpacity={0.02} label="LOW" />
                   <ReferenceLine x={72} stroke="#f97316" strokeDasharray="4 4" strokeWidth={1} label={{ value: '+72h', fill: '#f97316', fontSize: 9, position: 'insideTopLeft' }} />
                   <ReferenceLine x={leadHours} stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 4" label={{ value: `+${leadHours}h`, fill: '#60a5fa', fontSize: 10, position: 'top' }} />
                   <Bar dataKey="rainMean" name="Rain" fill="#3b82f6" />
@@ -712,8 +716,10 @@ export default function ForecastPanel() {
                   <XAxis dataKey="hours" stroke="#6b7280" fontSize={10} tickFormatter={(v) => `+${v}h`} />
                   <YAxis stroke="#6b7280" fontSize={10} />
                   <Tooltip content={<CustomTooltip variable="wind" unit="m/s" />} />
-                  <ReferenceArea x1={0} x2={leadHours} fill="#22c55e" fillOpacity={0.03} />
-                  <ReferenceArea x1={72} x2={120} fill="#ef4444" fillOpacity={0.03} />
+                  <ReferenceArea x1={0} x2={72} fill="#22c55e" fillOpacity={0.05} label="HIGH" />
+                  <ReferenceArea x1={72} x2={120} fill="#f59e0b" fillOpacity={0.04} label="MODERATE" />
+                  <ReferenceArea x1={120} x2={240} fill="#f97316" fillOpacity={0.03} label="LOW-MOD" />
+                  <ReferenceArea x1={240} x2={360} fill="#ef4444" fillOpacity={0.02} label="LOW" />
                   <ReferenceLine x={72} stroke="#f97316" strokeDasharray="4 4" strokeWidth={1} label={{ value: '+72h', fill: '#f97316', fontSize: 9, position: 'insideTopLeft' }} />
                   <ReferenceLine x={leadHours} stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 4" label={{ value: `+${leadHours}h`, fill: '#60a5fa', fontSize: 10, position: 'top' }} />
                   <Area type="monotone" dataKey="windMean" name="Mean Wind" stroke="#14b8a6" fill="#14b8a6" fillOpacity={0.3} />
@@ -731,8 +737,10 @@ export default function ForecastPanel() {
                   <XAxis dataKey="hours" stroke="#6b7280" fontSize={10} tickFormatter={(v) => `+${v}h`} />
                   <YAxis stroke="#6b7280" fontSize={10} domain={['auto', 'auto']} />
                   <Tooltip content={<CustomTooltip variable="pressure" unit="hPa" />} />
-                  <ReferenceArea x1={0} x2={leadHours} fill="#22c55e" fillOpacity={0.03} />
-                  <ReferenceArea x1={72} x2={120} fill="#ef4444" fillOpacity={0.03} />
+                  <ReferenceArea x1={0} x2={72} fill="#22c55e" fillOpacity={0.05} label="HIGH" />
+                  <ReferenceArea x1={72} x2={120} fill="#f59e0b" fillOpacity={0.04} label="MODERATE" />
+                  <ReferenceArea x1={120} x2={240} fill="#f97316" fillOpacity={0.03} label="LOW-MOD" />
+                  <ReferenceArea x1={240} x2={360} fill="#ef4444" fillOpacity={0.02} label="LOW" />
                   <ReferenceLine x={72} stroke="#f97316" strokeDasharray="4 4" strokeWidth={1} label={{ value: '+72h', fill: '#f97316', fontSize: 9, position: 'insideTopLeft' }} />
                   <ReferenceLine x={leadHours} stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 4" label={{ value: `+${leadHours}h`, fill: '#60a5fa', fontSize: 10, position: 'top' }} />
                   <Line type="monotone" dataKey="pressure" name="Pressure" stroke="#a78bfa" strokeWidth={2} dot={false} />
