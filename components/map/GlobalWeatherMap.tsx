@@ -32,7 +32,7 @@ const CITY_PRESETS = [
   { name: 'Global',     lat: 25.0,   lon: 55.0,   zoom: 2  },
 ];
 
-// UAE Emirates for alert scanning (all 7 emirates)
+// Major cities for alert scanning
 const MAJOR_CITIES = [
   { name: 'Dubai', lat: 25.20, lon: 55.27 },
   { name: 'Abu Dhabi', lat: 24.45, lon: 54.45 },
@@ -531,7 +531,7 @@ export default function GlobalWeatherMap() {
               
               <span style={{ fontSize: 12 }}>🇦🇪</span>
               <span style={{ fontSize: 12, color: '#f1f5f9', fontWeight: 600 }}>
-                UAE Alert Scan
+                Alert Scan
               </span>
 
               {/* Summary counts */}
