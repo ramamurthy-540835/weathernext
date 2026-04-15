@@ -9,7 +9,7 @@ steps:
     args:
       - '-c'
       - |
-        BUILD_VERSION="3.0.0"
+        BUILD_VERSION="4.0.0"
         BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
         GIT_COMMIT="cloud-build"
 
@@ -21,7 +21,7 @@ steps:
           --build-arg GIT_COMMIT="$${GIT_COMMIT}" \
           --build-arg BUILD_ENVIRONMENT=production \
           -t us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest \
-          -t us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:v3 \
+          -t us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:v4 \
           -t us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:$${BUILD_VERSION} \
           -t us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:uae-production \
           .
@@ -45,17 +45,17 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:v3'
+      - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:v4'
     waitFor: ['build-image']
 
-  # Step 3: Deploy to Cloud Run with NCM UAE configuration (v3 optimized)
+  # Step 3: Deploy to Cloud Run with NCM UAE configuration (v4 optimized)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
       - 'run'
       - 'deploy'
-      - 'weathernext-dashboard'
-      - '--image=us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:v3'
+      - 'weathernext-ncm-demo'
+      - '--image=us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:v4'
       - '--region=us-central1'
       - '--platform=managed'
       - '--port=8080'
@@ -79,7 +79,7 @@ steps:
         echo "Waiting for Cloud Run service to be ready..."
         sleep 10
 
-        SERVICE_URL=$(gcloud run services describe weathernext-dashboard --region us-central1 --format 'value(status.url)')
+        SERVICE_URL=$(gcloud run services describe weathernext-ncm-demo --region us-central1 --format 'value(status.url)')
         echo "Testing service at: $${SERVICE_URL}"
 
         curl -f "$${SERVICE_URL}" || exit 1
@@ -92,7 +92,7 @@ availableSecrets:
 
 images:
   - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:latest'
-  - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:v3'
+  - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:v4'
   - 'us-central1-docker.pkg.dev/ctoteam/weathernext/dashboard:uae-production'
 
 options:
@@ -105,5 +105,5 @@ timeout: '2400s'
 # Build trigger configuration
 substitutions:
   _REGION: 'us-central1'
-  _SERVICE_NAME: 'weathernext-dashboard'
+  _SERVICE_NAME: 'weathernext-ncm-demo'
   _ARTIFACT_REPO: 'weathernext'
