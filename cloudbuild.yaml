@@ -66,23 +66,9 @@ steps:
       - '--allow-unauthenticated'
       - '--service-account=weathernext-dashboard@ctoteam.iam.gserviceaccount.com'
       # Environment variables for production
-      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=ctoteam'
-      - '--update-env-vars=BIGQUERY_PROJECT_ID=ctoteam'
-      - '--update-env-vars=BIGQUERY_DATASET=weathernext_2'
-      - '--update-env-vars=BIGQUERY_TABLE=weathernext_2_0_0'
-      - '--update-env-vars=BIGQUERY_DERIVED_DATASET=weathernext_derived'
-      - '--update-env-vars=GEMINI_MODEL_NAME=gemini-3.1-pro-preview'
-      - '--update-env-vars=NEXT_PUBLIC_APP_NAME=WeatherNext Dashboard'
-      - '--update-env-vars=NCM_REGION=UAE'
-      - '--update-env-vars=FORECAST_DAYS=15'
-      - '--update-env-vars=ENSEMBLE_MEMBERS=64'
-      - '--update-env-vars=ENABLE_PROBABILISTIC_ALERTS=true'
-      - '--update-env-vars=ENABLE_TAIL_RISK_ANALYSIS=true'
-      - '--update-env-vars=CONFIDENCE_THRESHOLD_HIGH=0.8'
-      - '--update-env-vars=CONFIDENCE_THRESHOLD_LOW=0.5'
+      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=ctoteam,BIGQUERY_PROJECT_ID=ctoteam,BIGQUERY_DATASET=weathernext_2,BIGQUERY_TABLE=weathernext_2_0_0,BIGQUERY_DERIVED_DATASET=weathernext_derived,GEMINI_MODEL_NAME=gemini-3.1-pro-preview,NEXT_PUBLIC_APP_NAME=WeatherNext AI Intelligence,FORECAST_DAYS=15,ENSEMBLE_MEMBERS=64,ENABLE_PROBABILISTIC_ALERTS=true,ENABLE_TAIL_RISK_ANALYSIS=true,CONFIDENCE_THRESHOLD_HIGH=0.8,CONFIDENCE_THRESHOLD_LOW=0.5'
       # Secrets from Secret Manager
-      - '--set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest'
-      - '--update-secrets=MAPBOX_TOKEN=MAPBOX_TOKEN:latest'
+      - '--set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest,MAPBOX_TOKEN=MAPBOX_TOKEN:latest'
     timeout: '600s'
 
   # Step 4: Run smoke test
