@@ -29,11 +29,16 @@ This document tracks the implementation status of the key requirements and AI di
 ## Next Steps / Open Items
 
 - [ ] **Await client feedback** on the Historical Validation demo.
+- [ ] **Scoping Phase: On-Premise Datasets & Predictions:**
+    - Before physical provisioning, we must define the exact scope of NCM's existing on-premise environment:
+        1. **Datasets:** Identify the specific historical datasets stored on-premise (e.g., radar archives, ground station telemetry, satellite imagery).
+        2. **Predictions:** Identify NCM's existing local prediction models (e.g., local WRF models, custom deterministic forecasts) running on-premise.
+        3. **Integration Strategy:** Determine how these local predictions will be benchmarked against, or fused with, the WeatherNext 2.0 ensemble.
 - [ ] **Physical GCP BigLake Provisioning (The Actual Solution):**
     - The current `app/api/historical/route.ts` demonstrates the federated query logic but returns mock data for the demo.
     - To implement the real production solution, we need a detailed requirement workshop with NCM IT to:
         1. Establish a secure network connection (Cloud VPN or Interconnect) to NCM's data center.
-        2. Use GCP BigLake to provide a direct connection to NCM's existing S3 storage for historical actuals.
+        2. Use GCP BigLake to provide a direct connection to NCM's existing S3 storage for historical actuals and local predictions.
         3. Create a BigLake External Connection in Google Cloud pointing to their existing S3 buckets.
         4. Define the external table (`ctoteam.ncm_onprem_ext.historical_station_data`).
         5. Uncomment the actual `bigquery.query()` execution in the API route to run live federated queries.
