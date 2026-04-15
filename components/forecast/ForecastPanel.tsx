@@ -100,8 +100,10 @@ export default function ForecastPanel() {
 
   const displayData = useMemo(() => {
     if (!fullTimeseries.current.length) return [];
-    const windowStart = Math.max(0, leadHours - 24);
-    const windowEnd = Math.min(360, leadHours + 24);  // Changed from 120 to 360 (15 days)
+    // Show all 15 days (360 hours) in charts
+    // Optional: Show windowed view for detailed analysis
+    const windowStart = 0;
+    const windowEnd = 360;
     return fullTimeseries.current.filter(
       d => d.hours >= windowStart && d.hours <= windowEnd
     );
