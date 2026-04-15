@@ -36,7 +36,7 @@ interface WeatherState {
   projection: 'globe' | 'mercator';
   autoRotate: boolean;
   spiralMode: boolean;
-  activeTab: 'forecast' | 'ensemble' | 'alerts' | 'chat' | 'cyclones' | 'architecture';
+  activeTab: 'forecast' | 'days' | 'ensemble' | 'alerts' | 'chat' | 'cyclones' | 'architecture';
   chatOpen: boolean;
   globalAlerts: GlobalAlert[];
   isScanning: boolean;
@@ -59,7 +59,7 @@ interface WeatherState {
   setProjection: (proj: 'globe' | 'mercator') => void;
   toggleAutoRotate: () => void;
   toggleSpiralMode: () => void;
-  setActiveTab: (tab: 'forecast' | 'ensemble' | 'alerts' | 'chat' | 'cyclones' | 'architecture') => void;
+  setActiveTab: (tab: 'forecast' | 'days' | 'ensemble' | 'alerts' | 'chat' | 'cyclones' | 'architecture') => void;
   setChatOpen: (open: boolean) => void;
   setGlobalAlerts: (alerts: GlobalAlert[]) => void;
   setIsScanning: (scanning: boolean) => void;
