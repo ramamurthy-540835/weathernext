@@ -220,7 +220,7 @@ function AlertsTab() {
         background: '#052e16', borderRadius: 8,
         border: '1px solid #166534' }}>
         <div style={{ fontSize: 11, color: '#86efac' }}>
-          Next recommended check: {initDate} +6h
+          Next recommended check: {initDate} +1h
         </div>
       </div>
     </div>
@@ -429,25 +429,28 @@ export default function Page() {
           )}
 
           {showDatePicker && (
-            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: '#1f2937', border: '1px solid #374151', borderRadius: '8px', padding: '12px', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}>
+            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: '#1f2937', border: '1px solid #374151', borderRadius: '8px', padding: '12px', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)', width: '280px' }}>
+              <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '-4px' }}>Select Date</div>
               <input type="date" 
                 value={initDate || '2026-04-07'}
                 max={new Date().toISOString().split('T')[0]}
                 min="2024-01-01"
                 onChange={e => setInitDate(e.target.value)}
                 style={{ background: '#111827', border: '1px solid #374151', 
-                  borderRadius: 6, color: 'white', padding: '6px 10px' }}
+                  borderRadius: 6, color: 'white', padding: '6px 10px', width: '100%' }}
               />
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {[0, 6, 12, 18].map(h => (
+              <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px', marginBottom: '-4px' }}>Select Hour (Near-Hourly Ingestion)</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px' }}>
+                {Array.from({length: 24}, (_, i) => i).map(h => (
                   <button key={h}
                     onClick={() => { setInitHour(h); setShowDatePicker(false); }}
                     style={{ 
-                      padding: '4px 10px', borderRadius: 6, fontSize: 12,
+                      padding: '4px 0', borderRadius: 4, fontSize: 11,
                       background: initHour === h ? '#2563eb' : '#374151',
-                      border: 'none', color: 'white', cursor: 'pointer'
+                      border: 'none', color: 'white', cursor: 'pointer',
+                      textAlign: 'center'
                     }}
-                  >{String(h).padStart(2,'0')}:00</button>
+                  >{String(h).padStart(2,'0')}</button>
                 ))}
               </div>
             </div>

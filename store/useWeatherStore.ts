@@ -36,7 +36,7 @@ interface WeatherState {
   projection: 'globe' | 'mercator';
   autoRotate: boolean;
   spiralMode: boolean;
-  activeTab: 'forecast' | 'days' | 'ensemble' | 'alerts' | 'chat' | 'cyclones' | 'architecture';
+  activeTab: 'forecast' | 'days' | 'ensemble' | 'alerts' | 'chat' | 'cyclones' | 'architecture' | 'history';
   chatOpen: boolean;
   globalAlerts: GlobalAlert[];
   isScanning: boolean;
@@ -59,7 +59,7 @@ interface WeatherState {
   setProjection: (proj: 'globe' | 'mercator') => void;
   toggleAutoRotate: () => void;
   toggleSpiralMode: () => void;
-  setActiveTab: (tab: 'forecast' | 'days' | 'ensemble' | 'alerts' | 'chat' | 'cyclones' | 'architecture') => void;
+  setActiveTab: (tab: 'forecast' | 'days' | 'ensemble' | 'alerts' | 'chat' | 'cyclones' | 'architecture' | 'history') => void;
   setChatOpen: (open: boolean) => void;
   setGlobalAlerts: (alerts: GlobalAlert[]) => void;
   setIsScanning: (scanning: boolean) => void;
@@ -117,28 +117,27 @@ export const useWeatherStore = create<WeatherState>((set, get) => ({
     }
   },
 
+  // Updated for near-hourly ingestion (1-hour steps instead of 6-hour)
   goToPreviousInit: () => set(state => {
     if (!state.initDate) return state;
-    const hours = [0, 6, 12, 18];
-    const currentIdx = hours.indexOf(state.initHour);
-    if (currentIdx > 0) {
-      return { initHour: hours[currentIdx - 1] };
+    if (state.initHour > 0) {
+      return { initHour: state.initHour - 1 };
     } else {
       const prev = new Date(state.initDate);
       prev.setDate(prev.getDate() - 1);
       return { 
         initDate: prev.toISOString().split('T')[0],
-        initHour: 18 
+        initHour: 23 
       };
     }
   }),
   
+  // Updated for near-hourly ingestion (1-hour steps instead of 6-hour)
   goToNextInit: () => set(state => {
     if (!state.initDate || !state.latestAvailableDate) return state;
-    const hours = [0, 6, 12, 18];
-    const currentIdx = hours.indexOf(state.initHour);
-    const nextHour = currentIdx < 3 ? hours[currentIdx + 1] : 0;
-    const nextDate = currentIdx < 3 ? state.initDate : (() => {
+    
+    const nextHour = state.initHour < 23 ? state.initHour + 1 : 0;
+    const nextDate = state.initHour < 23 ? state.initDate : (() => {
       const next = new Date(state.initDate);
       next.setDate(next.getDate() + 1);
       return next.toISOString().split('T')[0];
