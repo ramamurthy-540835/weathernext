@@ -64,7 +64,6 @@ steps:
       - '--min-instances=1'
       - '--max-instances=10'
       - '--allow-unauthenticated'
-      - '--service-account=weathernext-dashboard@ctoteam.iam.gserviceaccount.com'
       # Environment variables for production
       - '--set-env-vars=GOOGLE_CLOUD_PROJECT=ctoteam,BIGQUERY_PROJECT_ID=ctoteam,BIGQUERY_DATASET=weathernext_2,BIGQUERY_TABLE=weathernext_2_0_0,BIGQUERY_DERIVED_DATASET=weathernext_derived,GEMINI_MODEL_NAME=gemini-3.1-pro-preview,NEXT_PUBLIC_APP_NAME=WeatherNext AI Intelligence,FORECAST_DAYS=15,ENSEMBLE_MEMBERS=64,ENABLE_PROBABILISTIC_ALERTS=true,ENABLE_TAIL_RISK_ANALYSIS=true,CONFIDENCE_THRESHOLD_HIGH=0.8,CONFIDENCE_THRESHOLD_LOW=0.5'
       # Secrets from Secret Manager
