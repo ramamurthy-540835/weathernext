@@ -489,10 +489,12 @@ export default function GlobalWeatherMap() {
 
   useEffect(() => {
     if (!initDate || !mapLoaded) return;
-    const timer = setTimeout(() => {
+    // Run scan immediately on load, then every 30s
+    runGlobalScan();
+    const timer = setInterval(() => {
       runGlobalScan();
-    }, 10000);
-    return () => clearTimeout(timer);
+    }, 30000);
+    return () => clearInterval(timer);
   }, [initDate, initHour, mapLoaded]);
 
   const dangerCount = globalAlerts.filter(a => a.severity === 'DANGER').length;
@@ -533,7 +535,7 @@ export default function GlobalWeatherMap() {
               </span>
 
               {/* Summary counts */}
-              <span style={{ fontSize: 11, color: '#64748b' }}>
+              <span style={{ fontSize: 10, color: '#64748b' }}>
                 {dangerCount} DANGER · {warningCount} WARNING · {clearCount} Clear
               </span>
               
@@ -563,18 +565,18 @@ export default function GlobalWeatherMap() {
           ) : (
             <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', minWidth: 360 }}>
               {/* Header row */}
-              <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: showAlertList ? '1px solid #1e293b' : 'none', cursor: 'pointer' }} onClick={() => setShowAlertList(!showAlertList)}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9' }}>🇦🇪 UAE Alert Scan — All 7 Emirates</span>
+              <div style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: showAlertList ? '1px solid #1e293b' : 'none', cursor: 'pointer' }} onClick={() => setShowAlertList(!showAlertList)}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#cbd5e1' }}>🇦🇪 Alert Scan</span>
                 {/* Severity counts */}
-                <div style={{ display: 'flex', gap: 6, marginLeft: 4 }}>
+                <div style={{ display: 'flex', gap: 4, marginLeft: 2 }}>
                   {dangerCount > 0 && (
-                    <span style={{ fontSize: 11, fontWeight: 700, background: '#450a0a', color: '#fca5a5', padding: '2px 8px', borderRadius: 20 }}>🔴 {dangerCount} DANGER</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, background: '#450a0a', color: '#fca5a5', padding: '1px 6px', borderRadius: 20 }}>🔴 {dangerCount}</span>
                   )}
                   {warningCount > 0 && (
-                    <span style={{ fontSize: 11, fontWeight: 700, background: '#431407', color: '#fdba74', padding: '2px 8px', borderRadius: 20 }}>🟠 {warningCount} WARNING</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, background: '#431407', color: '#fdba74', padding: '1px 6px', borderRadius: 20 }}>🟠 {warningCount}</span>
                   )}
                   {clearCount > 0 && (
-                    <span style={{ fontSize: 11, background: '#052e16', color: '#86efac', padding: '2px 8px', borderRadius: 20 }}>✓ {clearCount} Clear</span>
+                    <span style={{ fontSize: 10, background: '#052e16', color: '#86efac', padding: '1px 6px', borderRadius: 20 }}>✓ {clearCount}</span>
                   )}
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); setScanMinimized(true); }} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 12, padding: '2px 6px' }}>▲ minimize</button>
