@@ -40,36 +40,36 @@ export default function ArchitectureView() {
   return (
     <div style={{ padding: '20px', background: '#030712', color: 'white', maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
       <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>WeatherNext 2 Architecture</h2>
-      <p style={{ color: '#9ca3af', fontSize: 12, marginBottom: 20 }}>For NCM (UAE National Center of Meteorology)</p>
+      <p style={{ color: '#9ca3af', fontSize: 12, marginBottom: 20 }}>Global AI-Powered Weather Forecasting System</p>
 
       <Section title="System Overview" icon={Cloud}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
           <div style={{ background: '#1f2937', padding: 12, borderRadius: 8 }}>
             <div style={{ color: '#3b82f6', fontWeight: 600, marginBottom: 8 }}>Input Layer</div>
             <ul style={{ margin: 0, paddingLeft: 16, listStyle: 'disc' }}>
-              <li>Satellite observations (ECMWF, NOAA)</li>
-              <li>Ground stations (UAE, Gulf)</li>
-              <li>Radar/lidar networks</li>
-              <li>Ocean buoys (Arabian Sea)</li>
+              <li>Satellite observations</li>
+              <li>Weather stations (global network)</li>
+              <li>Radar systems</li>
+              <li>Ocean buoys</li>
             </ul>
           </div>
           <div style={{ background: '#1f2937', padding: 12, borderRadius: 8 }}>
             <div style={{ color: '#10b981', fontWeight: 600, marginBottom: 8 }}>Processing</div>
             <ul style={{ margin: 0, paddingLeft: 16, listStyle: 'disc' }}>
-              <li>Data assimilation (4D-Var)</li>
-              <li>64-member ensemble perturbations</li>
-              <li>Neural network physics</li>
-              <li>Inference: ~30 seconds</li>
+              <li>Blend observations with past patterns</li>
+              <li>Generate 64 different forecasts</li>
+              <li>AI-powered weather model</li>
+              <li>Results in ~30 seconds</li>
             </ul>
           </div>
         </div>
         <div style={{ background: '#1f2937', padding: 12, borderRadius: 8 }}>
           <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: 8 }}>Output</div>
           <ul style={{ margin: 0, paddingLeft: 16, listStyle: 'disc' }}>
-            <li>Global 9km grid (0.125°)</li>
-            <li>120h lead time (+5 days)</li>
-            <li>6h refresh cycle</li>
-            <li>50+ variables (temp, wind, rain, pressure, etc.)</li>
+            <li>Forecasts for the entire world</li>
+            <li>Up to 15 days in advance</li>
+            <li>Updates every 6 hours</li>
+            <li>Temperature, wind, rain, pressure, and more</li>
           </ul>
         </div>
       </Section>
@@ -108,10 +108,10 @@ export default function ArchitectureView() {
         </div>
 
         <div style={{ background: '#0f172a', border: '1px solid #1e293b', padding: 12, borderRadius: 8 }}>
-          <div style={{ color: '#94a3b8', fontWeight: 600, marginBottom: 8 }}>↓ How NCM Uses It</div>
+          <div style={{ color: '#94a3b8', fontWeight: 600, marginBottom: 8 }}>↓ How Decision Makers Use It</div>
           <p style={{ margin: 0, fontSize: 12 }}>
             Instead of one forecast: "30°C tomorrow"<br/>
-            Probabilistic: "Mean 30°C, but 90% confidence stays 28-32°C, 12 of 64 members exceed 35°C heat stress threshold"
+            Multiple forecasts: "Average 30°C, but likely stays 28-32°C, 12 of 64 predictions show extreme heat"
           </p>
         </div>
       </Section>
@@ -119,28 +119,28 @@ export default function ArchitectureView() {
       <Section title="Data Pipeline" icon={Database}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: 12, borderRadius: 8 }}>
-            <div style={{ color: '#60a5fa', fontWeight: 600, marginBottom: 6 }}>1. Ingestion (00:00, 06:00, 12:00, 18:00 UTC)</div>
-            <p style={{ margin: 0, fontSize: 12 }}>WeatherNext 2.0 initialization with latest observations</p>
+            <div style={{ color: '#60a5fa', fontWeight: 600, marginBottom: 6 }}>1. Data Collection (Every 6 hours)</div>
+            <p style={{ margin: 0, fontSize: 12 }}>Gather latest weather observations from around the world</p>
           </div>
 
           <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: 12, borderRadius: 8 }}>
-            <div style={{ color: '#34d399', fontWeight: 600, marginBottom: 6 }}>2. Ensemble Generation (~30s)</div>
-            <p style={{ margin: 0, fontSize: 12 }}>64 neural network forecasts to +120h (5 days)</p>
+            <div style={{ color: '#34d399', fontWeight: 600, marginBottom: 6 }}>2. Generate Forecasts (~30 seconds)</div>
+            <p style={{ margin: 0, fontSize: 12 }}>Create 64 different weather predictions up to 15 days ahead</p>
           </div>
 
           <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: 12, borderRadius: 8 }}>
-            <div style={{ color: '#fbbf24', fontWeight: 600, marginBottom: 6 }}>3. Storage → BigQuery</div>
-            <p style={{ margin: 0, fontSize: 12 }}>ctoteam.weathernext_2.weathernext_2_0_0 (full 64 members)</p>
+            <div style={{ color: '#fbbf24', fontWeight: 600, marginBottom: 6 }}>3. Store Data</div>
+            <p style={{ margin: 0, fontSize: 12 }}>Save all forecast data for retrieval and analysis</p>
           </div>
 
           <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: 12, borderRadius: 8 }}>
-            <div style={{ color: '#f87171', fontWeight: 600, marginBottom: 6 }}>4. API Response (this dashboard)</div>
-            <p style={{ margin: 0, fontSize: 12 }}>Real-time query: P10/P50/P90, member counts, percentiles</p>
+            <div style={{ color: '#f87171', fontWeight: 600, marginBottom: 6 }}>4. Display on Dashboard</div>
+            <p style={{ margin: 0, fontSize: 12 }}>Show forecasts, statistics, and confidence levels to users</p>
           </div>
 
           <div style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: 12, borderRadius: 8 }}>
-            <div style={{ color: '#d8b4fe', fontWeight: 600, marginBottom: 6 }}>5. NCM Decision Intelligence</div>
-            <p style={{ margin: 0, fontSize: 12 }}>AI-powered alerts, hazard scoring, forecast confidence recommendations</p>
+            <div style={{ color: '#d8b4fe', fontWeight: 600, marginBottom: 6 }}>5. Generate Alerts</div>
+            <p style={{ margin: 0, fontSize: 12 }}>Alert users about significant or dangerous weather coming</p>
           </div>
         </div>
       </Section>
@@ -203,12 +203,12 @@ export default function ArchitectureView() {
           {/* Arrow 5 */}
           <path d="M 420 340 L 420 380" stroke="#8b5cf6" strokeWidth="2" fill="none" markerEnd="url(#arrowhead-purple)"/>
 
-          {/* NCM Decision */}
+          {/* Decisions */}
           <g>
             <rect x="360" y="380" width="120" height="80" fill="#1f2937" stroke="#06b6d4" strokeWidth="2" rx="8"/>
-            <text x="420" y="405" textAnchor="middle" fill="#22d3ee" fontWeight="bold" fontSize="13">🎯 NCM Decisions</text>
-            <text x="420" y="425" textAnchor="middle" fill="#d1d5db" fontSize="10">Hazard Assessment,</text>
-            <text x="420" y="440" textAnchor="middle" fill="#d1d5db" fontSize="10">Alert Generation</text>
+            <text x="420" y="405" textAnchor="middle" fill="#22d3ee" fontWeight="bold" fontSize="13">🎯 Decisions</text>
+            <text x="420" y="425" textAnchor="middle" fill="#d1d5db" fontSize="10">Risk Assessment,</text>
+            <text x="420" y="440" textAnchor="middle" fill="#d1d5db" fontSize="10">Warnings & Alerts</text>
           </g>
 
           {/* Side panel - Ensemble Stats */}
@@ -239,10 +239,10 @@ export default function ArchitectureView() {
             <text x="530" y="345" fill="#d1d5db" fontSize="10">  exceeding threshold</text>
             <text x="530" y="360" fill="#d1d5db" fontSize="10">• Probability = members / 64</text>
 
-            <text x="530" y="395" fill="#22d3ee" fontWeight="bold" fontSize="11">NCM Alert Logic:</text>
-            <text x="530" y="415" fill="#d1d5db" fontSize="10">If P90 > threshold → WARNING</text>
-            <text x="530" y="430" fill="#d1d5db" fontSize="10">If members > 32 → ALERT ISSUED</text>
-            <text x="530" y="445" fill="#d1d5db" fontSize="10">Member consensus drives confidence</text>
+            <text x="530" y="395" fill="#22d3ee" fontWeight="bold" fontSize="11">Alert Logic:</text>
+            <text x="530" y="415" fill="#d1d5db" fontSize="10">If worst case is dangerous → WARNING</text>
+            <text x="530" y="430" fill="#d1d5db" fontSize="10">If many forecasts agree → ALERT ISSUED</text>
+            <text x="530" y="445" fill="#d1d5db" fontSize="10">More agreement = more confidence</text>
           </g>
 
           {/* Arrow markers */}
@@ -266,86 +266,149 @@ export default function ArchitectureView() {
         </svg>
       </Section>
 
-      <Section title="NCM Operational Workflow" icon={MapPin}>
+      <Section title="Operational Workflow" icon={MapPin}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ background: '#1f2937', padding: 12, borderRadius: 8 }}>
-            <div style={{ color: '#60a5fa', fontWeight: 600, marginBottom: 8 }}>🔄 6-Hour Cycle (Every 6h)</div>
+            <div style={{ color: '#60a5fa', fontWeight: 600, marginBottom: 8 }}>🔄 Update Cycle (Every 6 Hours)</div>
             <ol style={{ margin: 0, paddingLeft: 20, listStyle: 'decimal' }}>
-              <li>WeatherNext 2 ensemble ingests latest data</li>
-              <li>Dashboard auto-refreshes global alerts</li>
-              <li>Forecaster reviews P90 hazards for UAE region</li>
-              <li>AI assistant (Gemini) generates probabilistic insights</li>
-              <li>NCM issues guidance (if threshold exceeded)</li>
+              <li>Collect latest weather observations</li>
+              <li>Generate new forecasts</li>
+              <li>Update dashboard with latest data</li>
+              <li>AI assistant analyzes patterns and risks</li>
+              <li>Issue alerts for dangerous weather</li>
             </ol>
           </div>
 
           <div style={{ background: '#1f2937', padding: 12, borderRadius: 8 }}>
-            <div style={{ color: '#34d399', fontWeight: 600, marginBottom: 8 }}>⚡ Key UAE Hazards Monitored</div>
+            <div style={{ color: '#34d399', fontWeight: 600, marginBottom: 8 }}>⚡ Common Weather Hazards Monitored</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12 }}>
-              <div>🌪️ Dust storms (visibility)</div>
-              <div>🔥 Extreme heat (&gt;50°C)</div>
-              <div>🌊 Flash floods (wadi)</div>
-              <div>🌀 Cyclones (track)</div>
-              <div>💨 Wind hazards (maritime)</div>
-              <div>⚡ Thunderstorms (lightning)</div>
+              <div>🌪️ Dust & Sand Storms</div>
+              <div>🔥 Extreme Heat</div>
+              <div>🌊 Heavy Rain & Flooding</div>
+              <div>🌀 Cyclones & Hurricanes</div>
+              <div>💨 Strong Winds</div>
+              <div>⚡ Thunderstorms</div>
             </div>
           </div>
 
           <div style={{ background: '#1f2937', padding: 12, borderRadius: 8 }}>
             <div style={{ color: '#fbbf24', fontWeight: 600, marginBottom: 8 }}>✅ Decision Support</div>
             <ul style={{ margin: 0, paddingLeft: 16, listStyle: 'disc', fontSize: 12 }}>
-              <li>Ensemble consensus: "X of 64 members" quantifies risk</li>
-              <li>P90 tail risk: "worst case" for planning</li>
-              <li>Confidence metric: tight spread = act on forecast</li>
-              <li>Lead time: which +6h / +12h / +24h windows matter most</li>
+              <li>How many forecasts agree? Shows forecast confidence</li>
+              <li>Worst case scenario helps with planning</li>
+              <li>Tight forecast agreement = more reliable predictions</li>
+              <li>Timing matters: predict when hazards might occur</li>
             </ul>
           </div>
         </div>
       </Section>
 
-      <Section title="Architecture Diagram" icon={AlertCircle}>
-        <div style={{ background: '#1f2937', padding: 16, borderRadius: 8, fontFamily: 'monospace', fontSize: 11, color: '#d1d5db', overflowX: 'auto', whiteSpace: 'pre-wrap', wordWrap: 'break-word', lineHeight: 1.6 }}>
-{`┌─────────────────────────────────────────────────────────────────┐
-│                 WEATHERNEXT 2 SYSTEM ARCHITECTURE                │
-└─────────────────────────────────────────────────────────────────┘
+      <Section title="System Flow Diagram" icon={AlertCircle}>
+        <svg viewBox="0 0 1000 450" style={{ width: '100%', height: 'auto' }}>
+          {/* Title Background */}
+          <rect x="10" y="10" width="980" height="40" fill="#0f172a" stroke="#3b82f6" strokeWidth="2" rx="4"/>
+          <text x="500" y="35" textAnchor="middle" fill="#60a5fa" fontWeight="bold" fontSize="16">WeatherNext 2 System Flow</text>
 
-  🛰️ OBSERVATIONS                  🧠 MODEL                ☁️ STORAGE
-  ─────────────────              ──────────────          ─────────────
-  • Satellite data
-  • Ground stations      →    DeepMind              →   BigQuery
-  • Radar/Lidar          WeatherNext 2.0               (Full Dataset)
-  • Ocean buoys          64-Member Ensemble
-  • UAE Ground Net       Neural Network                ↓
-                         Physics-based                 ↓
-                         Deterministic                 ↓
-                         (per member)                  ↓
-                                                    ┌──────────────┐
-                                                    │ Web Dashboard│
-                                                    │ (This UI)    │
-                                                    │              │
-                                                    │ • Query P10/ │
-                                                    │   P50/P90    │
-                                                    │ • Member %   │
-                                                    │ • Confidence │
-                                                    │ • Ensemble   │
-                                                    │   Spread     │
-                                                    └──────────────┘
-                                                           ↓
-                                                    ┌──────────────┐
-                                                    │ NCM AI       │
-                                                    │ (Gemini)     │
-                                                    │              │
-                                                    │ • Hazard     │
-                                                    │   scoring    │
-                                                    │ • Alert      │
-                                                    │   generation │
-                                                    │ • UAE focus  │
-                                                    └──────────────┘
-                                                           ↓
-                                                    Forecaster
-                                                    Decision
-                                                    & NCM Alert`}
-        </div>
+          {/* Observations Box */}
+          <rect x="20" y="80" width="140" height="100" fill="#1f2937" stroke="#3b82f6" strokeWidth="2" rx="8"/>
+          <text x="90" y="105" textAnchor="middle" fill="#60a5fa" fontWeight="bold" fontSize="13">🛰️ DATA INPUT</text>
+          <text x="90" y="125" textAnchor="middle" fill="#d1d5db" fontSize="11">Satellites</text>
+          <text x="90" y="140" textAnchor="middle" fill="#d1d5db" fontSize="11">Weather Stations</text>
+          <text x="90" y="155" textAnchor="middle" fill="#d1d5db" fontSize="11">Radar</text>
+          <text x="90" y="170" textAnchor="middle" fill="#d1d5db" fontSize="11">Ocean Buoys</text>
+
+          {/* Arrow 1 */}
+          <path d="M 160 130 L 200 130" stroke="#3b82f6" strokeWidth="3" fill="none" markerEnd="url(#arrowhead-blue)"/>
+
+          {/* Model Box */}
+          <rect x="200" y="80" width="140" height="100" fill="#1f2937" stroke="#10b981" strokeWidth="2" rx="8"/>
+          <text x="270" y="105" textAnchor="middle" fill="#34d399" fontWeight="bold" fontSize="13">🧠 AI MODEL</text>
+          <text x="270" y="125" textAnchor="middle" fill="#d1d5db" fontSize="11">WeatherNext 2.0</text>
+          <text x="270" y="140" textAnchor="middle" fill="#d1d5db" fontSize="11">64 Forecasts</text>
+          <text x="270" y="155" textAnchor="middle" fill="#d1d5db" fontSize="11">Neural Network</text>
+          <text x="270" y="170" textAnchor="middle" fill="#d1d5db" fontSize="11">~30 seconds</text>
+
+          {/* Arrow 2 */}
+          <path d="M 340 130 L 380 130" stroke="#10b981" strokeWidth="3" fill="none" markerEnd="url(#arrowhead-green)"/>
+
+          {/* Storage Box */}
+          <rect x="380" y="80" width="140" height="100" fill="#1f2937" stroke="#f59e0b" strokeWidth="2" rx="8"/>
+          <text x="450" y="105" textAnchor="middle" fill="#fbbf24" fontWeight="bold" fontSize="13">💾 DATABASE</text>
+          <text x="450" y="125" textAnchor="middle" fill="#d1d5db" fontSize="11">BigQuery</text>
+          <text x="450" y="140" textAnchor="middle" fill="#d1d5db" fontSize="11">Full Dataset</text>
+          <text x="450" y="155" textAnchor="middle" fill="#d1d5db" fontSize="11">All 64</text>
+          <text x="450" y="170" textAnchor="middle" fill="#d1d5db" fontSize="11">Forecasts</text>
+
+          {/* Arrow 3 */}
+          <path d="M 450 180 L 450 220" stroke="#f59e0b" strokeWidth="3" fill="none" markerEnd="url(#arrowhead-orange)"/>
+
+          {/* API Box */}
+          <rect x="380" y="220" width="140" height="80" fill="#1f2937" stroke="#ef4444" strokeWidth="2" rx="8"/>
+          <text x="450" y="245" textAnchor="middle" fill="#f87171" fontWeight="bold" fontSize="13">🔌 API LAYER</text>
+          <text x="450" y="265" textAnchor="middle" fill="#d1d5db" fontSize="11">Query & Filter</text>
+          <text x="450" y="280" textAnchor="middle" fill="#d1d5db" fontSize="11">P10/P50/P90</text>
+
+          {/* Arrow 4 */}
+          <path d="M 450 300 L 450 340" stroke="#ef4444" strokeWidth="3" fill="none" markerEnd="url(#arrowhead-red)"/>
+
+          {/* Dashboard Box */}
+          <rect x="350" y="340" width="200" height="80" fill="#1f2937" stroke="#8b5cf6" strokeWidth="2" rx="8"/>
+          <text x="450" y="360" textAnchor="middle" fill="#d8b4fe" fontWeight="bold" fontSize="13">🤖 USER DASHBOARD</text>
+          <text x="450" y="378" textAnchor="middle" fill="#d1d5db" fontSize="11">Charts • Maps • Forecasts • Alerts</text>
+
+          {/* Arrow 5 */}
+          <path d="M 550 380 L 590 380" stroke="#8b5cf6" strokeWidth="3" fill="none" markerEnd="url(#arrowhead-purple)"/>
+
+          {/* Decision Box */}
+          <rect x="590" y="340" width="170" height="80" fill="#1f2937" stroke="#06b6d4" strokeWidth="2" rx="8"/>
+          <text x="675" y="360" textAnchor="middle" fill="#22d3ee" fontWeight="bold" fontSize="13">🎯 USER ACTION</text>
+          <text x="675" y="378" textAnchor="middle" fill="#d1d5db" fontSize="11">Make Decisions • Issue Alerts</text>
+
+          {/* Right Side Panel - Statistics */}
+          <rect x="800" y="80" width="180" height="340" fill="#0f172a" stroke="#1e293b" strokeWidth="2" rx="8"/>
+          <text x="890" y="110" textAnchor="middle" fill="#60a5fa" fontWeight="bold" fontSize="12">📊 FORECAST STATS</text>
+
+          <text x="815" y="140" fill="#34d399" fontWeight="bold" fontSize="10">CONFIDENCE LEVELS</text>
+          <rect x="815" y="145" width="150" height="4" fill="#34d399" rx="2" opacity="0.3"/>
+
+          <text x="815" y="165" fill="#d1d5db" fontSize="9">Days 1-3: High ±1.2°C</text>
+          <text x="815" y="180" fill="#d1d5db" fontSize="9">Days 4-5: Moderate ±2.1°C</text>
+          <text x="815" y="195" fill="#d1d5db" fontSize="9">Days 6-10: Low-Mod ±3.5°C</text>
+          <text x="815" y="210" fill="#d1d5db" fontSize="9">Days 11-15: Low ±5.0°C</text>
+
+          <text x="815" y="240" fill="#fbbf24" fontWeight="bold" fontSize="10">ALERT LOGIC</text>
+          <rect x="815" y="245" width="150" height="4" fill="#fbbf24" rx="2" opacity="0.3"/>
+
+          <text x="815" y="265" fill="#d1d5db" fontSize="9">• If forecast is risky</text>
+          <text x="815" y="280" fill="#d1d5db" fontSize="9">  → Issue WARNING</text>
+          <text x="815" y="295" fill="#d1d5db" fontSize="9">• If many forecasts agree</text>
+          <text x="815" y="310" fill="#d1d5db" fontSize="9">  → Increase confidence</text>
+          <text x="815" y="325" fill="#d1d5db" fontSize="9">• Consensus drives</text>
+          <text x="815" y="340" fill="#d1d5db" fontSize="9">  alert strength</text>
+
+          <text x="815" y="370" fill="#86efac" fontWeight="bold" fontSize="10">✓ READY TO USE</text>
+          <text x="815" y="385" fill="#d1d5db" fontSize="9">Complete weather</text>
+          <text x="815" y="400" fill="#d1d5db" fontSize="9">decision system</text>
+
+          {/* Arrow markers */}
+          <defs>
+            <marker id="arrowhead-blue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+              <polygon points="0 0, 10 3, 0 6" fill="#3b82f6"/>
+            </marker>
+            <marker id="arrowhead-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+              <polygon points="0 0, 10 3, 0 6" fill="#10b981"/>
+            </marker>
+            <marker id="arrowhead-orange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+              <polygon points="0 0, 10 3, 0 6" fill="#f59e0b"/>
+            </marker>
+            <marker id="arrowhead-red" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+              <polygon points="0 0, 10 3, 0 6" fill="#ef4444"/>
+            </marker>
+            <marker id="arrowhead-purple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+              <polygon points="0 0, 10 3, 0 6" fill="#8b5cf6"/>
+            </marker>
+          </defs>
+        </svg>
       </Section>
 
       <Section title="Integration Points" icon={Cloud}>
@@ -384,11 +447,11 @@ export default function ArchitectureView() {
       </Section>
 
       <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', padding: 16, borderRadius: 12, marginTop: 20 }}>
-        <div style={{ color: '#86efac', fontWeight: 600, marginBottom: 8 }}>✓ Ready for NCM</div>
+        <div style={{ color: '#86efac', fontWeight: 600, marginBottom: 8 }}>✓ Real-Time AI Intelligence System Ready</div>
         <p style={{ margin: 0, fontSize: 12, color: '#d1d5db' }}>
-          This dashboard integrates WeatherNext 2.0 with NCM operational workflows.
-          The 64-member ensemble provides probabilistic hazard quantification,
-          confidence metrics, and tail-risk (P90) assessment for UAE-focused decision making.
+          This real-time AI intelligence system provides complete weather forecasting and alert capabilities.
+          The 64 different forecasts give you multiple perspectives on weather risk,
+          forecast reliability, and worst-case scenarios for better decision making.
         </p>
       </div>
     </div>

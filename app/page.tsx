@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import GlobalWeatherMap from '@/components/map/GlobalWeatherMap';
 import ForecastPanel from '@/components/forecast/ForecastPanel';
+import ForecastDays15 from '@/components/ForecastDays15';
 import EnsembleViewer from '@/components/ensemble/EnsembleViewer';
 import CyclonePanel from '@/components/cyclones/CyclonePanel';
 import ArchitectureView from '@/components/ArchitectureView';
@@ -424,7 +425,7 @@ export default function Page() {
 
               {/* Tabs */}
               <div style={{ display: 'flex', borderBottom: '1px solid #1f2937', overflowX: 'auto' }}>
-                {(['forecast', 'ensemble', 'alerts', 'cyclones', 'architecture'] as const).map(tab => (
+                {(['forecast', 'days', 'ensemble', 'alerts', 'cyclones', 'architecture'] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -433,7 +434,7 @@ export default function Page() {
                       : { flex: 1, padding: '10px', fontSize: '12px', fontWeight: 500, background: 'transparent', border: 'none', borderBottom: '2px solid transparent', color: '#6b7280', cursor: 'pointer', textTransform: 'capitalize', whiteSpace: 'nowrap' }
                     }
                   >
-                    {tab === 'cyclones' ? '🌀 Cyclones' : tab === 'architecture' ? '⚙️ Architecture' : tab}
+                    {tab === 'cyclones' ? '🌀 Cyclones' : tab === 'architecture' ? '⚙️ Architecture' : tab === 'days' ? '📅 15 Days' : tab}
                   </button>
                 ))}
               </div>
@@ -441,6 +442,7 @@ export default function Page() {
               {/* Tab Content */}
               <div style={{ flex: 1, overflowY: 'auto', background: '#111827' }}>
                 {activeTab === 'forecast' && <ForecastPanel />}
+                {activeTab === 'days' && <ForecastDays15 />}
                 {activeTab === 'ensemble' && <EnsembleViewer />}
                 {activeTab === 'alerts' && <AlertsTab />}
                 {activeTab === 'cyclones' && <CyclonePanel />}

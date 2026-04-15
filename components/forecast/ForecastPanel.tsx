@@ -673,7 +673,7 @@ export default function ForecastPanel() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={displayData} syncId="forecast" onClick={handleChartClick}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                  <XAxis dataKey="hours" stroke="#6b7280" fontSize={10} tickFormatter={(v) => `+${v}h`} />
+                  <XAxis dataKey="hours" stroke="#6b7280" fontSize={10} ticks={[0, 48, 96, 144, 192, 240, 288, 336]} tickFormatter={(v) => `+${v}h`} />
                   <YAxis stroke="#6b7280" fontSize={10} domain={['auto', 'auto']} />
                   <Tooltip content={<CustomTooltip variable="temperature" unit="°C" />} />
                   <ReferenceArea x1={0} x2={72} fill="#22c55e" fillOpacity={0.05} label="HIGH" />
@@ -695,7 +695,7 @@ export default function ForecastPanel() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={displayData} syncId="forecast" onClick={handleChartClick}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                  <XAxis dataKey="hours" stroke="#6b7280" fontSize={10} tickFormatter={(v) => `+${v}h`} />
+                  <XAxis dataKey="hours" stroke="#6b7280" fontSize={10} ticks={[0, 48, 96, 144, 192, 240, 288, 336]} tickFormatter={(v) => `+${v}h`} />
                   <YAxis stroke="#6b7280" fontSize={10} />
                   <Tooltip content={<CustomTooltip variable="rain" unit="mm" />} />
                   <ReferenceArea x1={0} x2={72} fill="#22c55e" fillOpacity={0.05} label="HIGH" />
@@ -715,7 +715,7 @@ export default function ForecastPanel() {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={displayData} syncId="forecast" onClick={handleChartClick}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                  <XAxis dataKey="hours" stroke="#6b7280" fontSize={10} tickFormatter={(v) => `+${v}h`} />
+                  <XAxis dataKey="hours" stroke="#6b7280" fontSize={10} ticks={[0, 48, 96, 144, 192, 240, 288, 336]} tickFormatter={(v) => `+${v}h`} />
                   <YAxis stroke="#6b7280" fontSize={10} />
                   <Tooltip content={<CustomTooltip variable="wind" unit="m/s" />} />
                   <ReferenceArea x1={0} x2={72} fill="#22c55e" fillOpacity={0.05} label="HIGH" />
@@ -736,7 +736,7 @@ export default function ForecastPanel() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={displayData} syncId="forecast" onClick={handleChartClick}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                  <XAxis dataKey="hours" stroke="#6b7280" fontSize={10} tickFormatter={(v) => `+${v}h`} />
+                  <XAxis dataKey="hours" stroke="#6b7280" fontSize={10} ticks={[0, 48, 96, 144, 192, 240, 288, 336]} tickFormatter={(v) => `+${v}h`} />
                   <YAxis stroke="#6b7280" fontSize={10} domain={['auto', 'auto']} />
                   <Tooltip content={<CustomTooltip variable="pressure" unit="hPa" />} />
                   <ReferenceArea x1={0} x2={72} fill="#22c55e" fillOpacity={0.05} label="HIGH" />
