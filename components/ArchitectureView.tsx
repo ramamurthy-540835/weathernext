@@ -195,7 +195,7 @@ export default function ArchitectureView() {
           {/* Dashboard & UI */}
           <g>
             <rect x="360" y="260" width="120" height="80" fill="#1f2937" stroke="#8b5cf6" strokeWidth="2" rx="8"/>
-            <text x="420" y="285" textAnchor="middle" fill="#d8b4fe" fontWeight="bold" fontSize="13">📊 Dashboard</text>
+            <text x="420" y="285" textAnchor="middle" fill="#d8b4fe" fontWeight="bold" fontSize="13">🤖 AI Intelligence</text>
             <text x="420" y="305" textAnchor="middle" fill="#d1d5db" fontSize="10">3D Map, Charts,</text>
             <text x="420" y="320" textAnchor="middle" fill="#d1d5db" fontSize="10">Alerts, Forecasts</text>
           </g>

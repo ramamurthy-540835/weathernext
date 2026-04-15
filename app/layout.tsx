@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'WeatherNext Dashboard',
+  title: 'WeatherNext AI Intelligence',
   description: 'AI Weather Forecasting — Google DeepMind WeatherNext 2',
 }
 

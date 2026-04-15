@@ -223,7 +223,7 @@ export default function Page() {
       {/* Top Nav Bar */}
       <div style={{ height: '44px', background: 'rgba(3,7,18,0.9)', borderBottom: '1px solid #1f2937', display: 'flex', alignItems: 'center', padding: '0 16px', gap: '8px', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 30 }}>
         <div style={{ fontWeight: 'bold', fontSize: '14px', letterSpacing: '0.025em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ color: '#3b82f6' }}>☁</span> WeatherNext Dashboard
+          <span style={{ color: '#3b82f6' }}>☁</span> WeatherNext AI Intelligence
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '24px' }}>
