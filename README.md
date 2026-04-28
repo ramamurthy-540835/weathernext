@@ -1,6 +1,6 @@
 # Weathernext
 ## Overview
-Weathernext is a modern, responsive web application designed to deliver real-time and forecast weather information. It provides users with a clean, intuitive interface to access current conditions, hourly breakdowns, and multi-day forecasts for any location worldwide. Built with a focus on performance and user experience, Weathernext leverages external APIs to ensure accurate and timely data delivery.
+Weathernext is a modern, responsive web application engineered to provide real-time and forecast weather information with a focus on accuracy and user experience. It offers a clean, intuitive interface for accessing current conditions, detailed hourly breakdowns, and multi-day forecasts for any global location. Built primarily with TypeScript and Next.js, it ensures high performance and leverages external APIs for timely data delivery across all devices.
 
 ## Business Problem
 In today's fast-paced environment, access to reliable and detailed weather information is critical for effective planning and safety. Many existing weather solutions present users with cluttered interfaces, intrusive advertisements, or inconsistent data. Weathernext addresses several key challenges:
@@ -21,19 +21,6 @@ Weathernext consolidates these disparate needs into a single, user-friendly, and
 *   **Responsive User Interface**: Ensures a seamless experience across various devices, from desktop browsers to mobile phones.
 *   **Unit Conversion**: Supports toggling between Celsius and Fahrenheit for temperature, and various units for wind speed (e.g., km/h, mph).
 *   **Modern Design**: Features a clean and aesthetically pleasing interface, leveraging Tailwind CSS for rapid and customizable UI development.
-
-## Architecture
-Weathernext employs a modern full-stack architecture built primarily on Next.js, leveraging its capabilities for both frontend rendering and backend API routes. The data flow is as follows:
-
-1.  **User Interaction**: A user interacts with the application through their web browser or device, viewing weather data, searching for locations, and managing favorites. The frontend is rendered in the browser.
-2.  **Next.js Frontend**: This layer, built with React and TypeScript, manages the user interface, handles client-side routing, and initiates calls to the application's API routes for data fetching. Next.js optimizes performance through server-side rendering or static site generation.
-3.  **Next.js API Routes**: These are serverless functions within the Next.js application that act as a secure intermediary between the frontend and external weather services. They are crucial for:
-    *   **Security**: Protecting sensitive API keys from being exposed on the client-side.
-    *   **Flexibility**: Enabling custom backend logic, data transformation, or caching.
-    *   **Performance**: Offloading data fetching and processing from the client's device.
-4.  **External Weather API**: The Next.js API routes fetch comprehensive raw weather data from a third-party service, such as OpenWeatherMap.
-
-This architecture ensures a fast, secure, and maintainable application by effectively separating UI concerns from data fetching and processing logic.
 
 ## Tech Stack
 *   **Frontend Framework**: [Next.js](https://nextjs.org/) (React)
@@ -62,7 +49,7 @@ The project follows a standard Next.js directory structure, complemented by conf
 ├── types/                    # TypeScript custom type definitions and interfaces
 ├── .dockerignore             # Specifies files to ignore when building Docker images
 ├── .env.gcp.example          # Example environment variables for GCP deployment
-├── .env.urls                 # Environment variable configurations for URLs
+├── .env.urls                 # Environment variable configurations for external URLs
 ├── .gitignore                # Specifies intentionally untracked files to ignore
 ├── Dockerfile                # Defines the Docker image for containerization
 ├── LOCAL_TEST_GUIDE.md       # Documentation for local testing procedures
@@ -103,76 +90,73 @@ To get Weathernext up and running on your local machine, follow these steps:
     ```
 
 3.  **Configure Environment Variables**:
-    Create a `.env.local` file in the root of the project based on `.env.gcp.example` or similar existing `.env` files.
-    You will need to obtain an API key from OpenWeatherMap (or the chosen weather API provider) and add it:
+    Create a `.env.local` file in the root directory based on `.env.gcp.example` or `.env.urls`. You will need to obtain an API key for the chosen weather service (e.g., OpenWeatherMap).
     ```
-    NEXT_PUBLIC_WEATHER_API_KEY=your_openweathermap_api_key_here
+    # Example .env.local content
+    NEXT_PUBLIC_OPENWEATHER_API_KEY=your_api_key_here
+    NEXT_PUBLIC_OPENWEATHER_BASE_URL=https://api.openweathermap.org/data/2.5
     ```
+    Replace `your_api_key_here` with your actual API key.
 
-4.  **Run the Development Server**:
+4.  **Run the Application**:
+    To start the development server:
     ```bash
     npm run dev
     # or yarn dev
     ```
-    The application will start in development mode, typically accessible at `http://localhost:3000`.
+    The application will typically be accessible at `http://localhost:3000`.
+
+5.  **Run with Docker (Optional)**:
+    If you have Docker installed, you can build and run the application in a container:
+    ```bash
+    docker build -t weathernext .
+    docker run -p 3000:3000 weathernext
+    ```
 
 ## Deployment
-Weathernext is designed for deployment on Google Cloud Platform (GCP), leveraging Docker for containerization and Google Cloud Build for CI/CD.
+Weathernext is designed for deployment on cloud platforms, leveraging containerization and CI/CD practices for efficient and scalable operations.
 
-### Prerequisites
-*   Google Cloud Platform account and project configured.
-*   Google Cloud SDK installed and authenticated.
-*   Docker installed (if building images locally).
+1.  **Containerization**: The project includes a `Dockerfile` for containerizing the application using Docker, ensuring consistent environments from development to production.
+2.  **Cloud Platform**: Deployment to [Google Cloud Platform (GCP)](https://cloud.google.com/) is supported, as indicated by `cloudbuild.yaml` and `.env.gcp.example`. Potential services for deployment include:
+    *   **Cloud Run**: For serverless container deployment, automatically scaling based on demand.
+    *   **App Engine**: For managed platform-as-a-service deployment.
+    *   **Google Kubernetes Engine (GKE)**: For more complex, microservices-based deployments if the project were to expand.
+3.  **Continuous Integration/Continuous Deployment (CI/CD)**: The `cloudbuild.yaml` file is configured for Google Cloud Build, enabling automated testing, building of Docker images, and deployment upon code commits to a specified branch.
 
-### Deployment Steps (Example for Google Cloud Run)
-1.  **Authenticate GCP CLI**:
-    ```bash
-    gcloud auth login
-    gcloud config set project your-gcp-project-id
-    ```
-
-2.  **Environment Variables**:
-    Ensure your production environment variables (e.g., `NEXT_PUBLIC_WEATHER_API_KEY`) are securely configured in your chosen GCP service (e.g., Cloud Run environment variables, Secret Manager). The `.env.gcp.example` provides a template.
-
-3.  **Build and Deploy using Cloud Build**:
-    The `cloudbuild.yaml` file defines the CI/CD pipeline for building the Docker image and deploying it.
-    Trigger a build using `gcloud builds submit`:
-    ```bash
-    gcloud builds submit --tag gcr.io/your-gcp-project-id/weathernext
-    ```
-    Once the image is built, you can deploy it to Cloud Run:
-    ```bash
-    gcloud run deploy weathernext \
-      --image gcr.io/your-gcp-project-id/weathernext \
-      --platform managed \
-      --region us-central1 \
-      --allow-unauthenticated \
-      --set-env-vars NEXT_PUBLIC_WEATHER_API_KEY=your_prod_api_key
-    ```
-    (Adjust region, service name, and environment variables as necessary for your setup.)
-
-4.  **Verify Deployment**:
-    After deployment, Cloud Run will provide a URL to access your live Weathernext application.
+For detailed deployment instructions, refer to `cloudbuild.yaml` and `.env.gcp.example` for environment variable configurations.
 
 ## Demo Workflow
-This section outlines a typical user interaction with the Weathernext application.
-
-1.  **Access Application**: Open the Weathernext web application in your browser. You will typically see current weather for a default or detected location.
-2.  **Search for a Location**: Use the prominent search bar to find weather for any city, zip code, or geographical coordinates worldwide. Type in "London" or "90210" and press Enter/Search.
-3.  **View Current Conditions**: Upon successful search, the main display will update to show real-time weather data for the selected location, including temperature, "feels like" temperature, humidity, wind, and a general description.
-4.  **Explore Forecasts**:
-    *   Navigate to the "Hourly Forecast" section (if available on the UI) to see temperature and precipitation probability breakdowns for the next 24-48 hours.
-    *   Switch to the "Daily Forecast" or "Extended Forecast" to view high/low temperatures and summary conditions for the next 5-7 days.
-5.  **Manage Favorites**: Click a "Favorite" or "Star" icon next to a location to save it. Access your saved locations from a dedicated section (e.g., a dropdown or sidebar) for quick retrieval.
-6.  **Toggle Units**: Locate the unit conversion toggle (e.g., "C/F" or "km/h / mph") to switch between metric and imperial units for temperature and wind speed.
-7.  **Explore Multiple Locations**: Repeat steps 2-5 to easily compare weather across different cities or regions.
+1.  **Access the Application**: Open the Weathernext web application in your browser.
+2.  **Search for a Location**: Utilize the prominent search bar to find weather information for any city, zip code, or geographical coordinates (e.g., "London," "90210," "40.7128,-74.0060").
+3.  **View Current Conditions**: Upon selecting a location, the main dashboard will display real-time weather data, including temperature, "feels like" temperature, humidity, wind, and a general weather description.
+4.  **Explore Hourly Forecast**: Scroll down to see a detailed hourly breakdown for the next 24-48 hours, showing temperature changes, precipitation probability, and wind gusts.
+5.  **Check Daily Forecast**: Further down, view the 5-7 day forecast, providing high/low temperatures and summary icons for each day.
+6.  **Manage Favorites (Optional)**: If available, use the "Add to Favorites" button to save frequently visited locations for quick access.
+7.  **Switch Units (Optional)**: Toggle between Celsius and Fahrenheit for temperature, or different units for wind speed, using the designated UI controls.
 
 ## Future Enhancements
-*   **User Authentication and Personalization**: Allow users to create accounts, persist favorite locations across devices, and customize settings.
-*   **Advanced Weather Alerts**: Implement real-time notifications for severe weather warnings in saved locations.
-*   **Interactive Weather Map**: Integrate a dynamic map displaying weather patterns, radar, and temperature overlays.
-*   **Multi-language Support**: Provide localization for the user interface to cater to a global audience.
-*   **Data Caching Optimizations**: Implement server-side caching strategies to reduce API calls and improve load times.
-*   **UI Themes**: Offer different visual themes (e.g., light/dark mode) for user preference.
-*   **Historical Weather Data**: Integrate a feature to view past weather conditions for specific dates.
-*   **Browser Widgets/Extensions**: Develop companion browser extensions or home screen widgets for quick weather access.
+*   **Advanced Mapping Integration**: Incorporate interactive weather maps showing precipitation, temperature, and wind overlays.
+*   **Historical Weather Data**: Allow users to look up past weather conditions for specific dates and locations.
+*   **Weather Alerts and Notifications**: Implement push notifications for severe weather warnings or significant changes in saved locations.
+*   **User Accounts & Personalization**: Enable user registration to save preferences, custom dashboards, and more favorite locations across devices.
+*   **Additional Weather Metrics**: Display air quality index (AQI), UV index, sunrise/sunset times, and moon phases.
+*   **Internationalization (i18n)**: Support multiple languages for a global user base.
+*   **Accessibility Improvements**: Further enhance accessibility features for users with disabilities.
+## Architecture
+
+```mermaid
+flowchart TD
+  A["User interacts with the Next.js/React frontend."]
+  B["Frontend renders UI using React components and Tailwind CSS."]
+  C["Frontend dispatches API requests for weather data."]
+  D["Go-based backend service processes API requests."]
+  E["Backend retrieves and processes data from external weather sources."]
+  F["Application components are containerized with Docker and deployed to GCP."]
+  A --> B
+  B --> C
+  C --> D
+  D --> E
+  E --> F
+```
+
+For a standalone preview, see [docs/architecture.html](docs/architecture.html).
