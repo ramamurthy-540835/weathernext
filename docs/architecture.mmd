@@ -1,0 +1,12 @@
+flowchart TD
+  A["User interacts with the Next.js/React frontend."]
+  B["Frontend renders UI using React components and Tailwind CSS."]
+  C["Frontend dispatches API requests for weather data."]
+  D["Go-based backend service processes API requests."]
+  E["Backend retrieves and processes data from external weather sources."]
+  F["Application components are containerized with Docker and deployed to GCP."]
+  A --> B
+  B --> C
+  C --> D
+  D --> E
+  E --> F
